@@ -1,0 +1,17 @@
+{
+    "name": "elzach.extensions.editor",
+    "references": [
+        "GUID:78a63bc527d520e45b2744e4f6e054bf"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
