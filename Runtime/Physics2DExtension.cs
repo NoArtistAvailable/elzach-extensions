@@ -20,6 +20,23 @@ public static class Physics2DExtension
         else return false;
     }
 
+    public static bool OverlapBox(Vector2 point, Vector2 size, Collider2D ignore, LayerMask mask)
+    {
+        ContactFilter2D filter = new ContactFilter2D();
+        filter.SetLayerMask(mask);
+        List<Collider2D> hits = new List<Collider2D>();
+        if (Physics2D.OverlapArea(point - size * 0.5f, point + size * 0.5f, filter, hits) > 0)
+        {
+            foreach (var hit in hits)
+            {
+                if (hit != ignore)
+                    return true;
+            }
+            return false;
+        }
+        else return false;
+    }
+
     public static bool RayCast(Vector2 pos, Vector2 dir, List<Collider2D> ignore, ref RaycastHit2D result)
     {
         ContactFilter2D filter = new ContactFilter2D();
