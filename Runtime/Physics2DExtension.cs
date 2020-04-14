@@ -58,11 +58,50 @@ public static class Physics2DExtension
         return false;
     }
 
+    public static bool RayCast(Vector2 pos, Vector2 dir, float maxDistance, List<Collider2D> ignore, ref RaycastHit2D result)
+    {
+        ContactFilter2D filter = new ContactFilter2D();
+        List<RaycastHit2D> hits = new List<RaycastHit2D>();
+        if (Physics2D.Raycast(pos, dir, filter, hits, maxDistance) > 0)
+        {
+            foreach (var hit in hits)
+            {
+                foreach (var ignoredCollider in ignore)
+                {
+                    if (hit.collider == ignoredCollider)
+                        break;
+                }
+                result = hit;
+                return hit;
+            }
+            return false;
+        }
+        return false;
+    }
+
     public static bool RayCast(Vector2 pos, Vector2 dir, Collider2D ignore, ref RaycastHit2D result)
     {
         ContactFilter2D filter = new ContactFilter2D();
         List<RaycastHit2D> hits = new List<RaycastHit2D>();
         if (Physics2D.Raycast(pos, dir, filter, hits) > 0)
+        {
+            foreach (var hit in hits)
+            {
+                if (hit.collider == ignore)
+                    continue;
+                result = hit;
+                return hit;
+            }
+            return false;
+        }
+        return false;
+    }
+
+    public static bool RayCast(Vector2 pos, Vector2 dir, float maxDistance ,Collider2D ignore, ref RaycastHit2D result)
+    {
+        ContactFilter2D filter = new ContactFilter2D();
+        List<RaycastHit2D> hits = new List<RaycastHit2D>();
+        if (Physics2D.Raycast(pos, dir, filter, hits, maxDistance) > 0)
         {
             foreach (var hit in hits)
             {
