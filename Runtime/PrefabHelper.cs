@@ -29,11 +29,13 @@ namespace elZach.Common
 
         private void OnEnable()
         {
+            if (Application.isPlaying) return;
             PrefabStage.prefabSaving += SavingPrefab;
         }
 
         private void OnDisable()
         {
+            if (Application.isPlaying) return;
             PrefabStage.prefabSaving -= SavingPrefab;
         }
 #endif
