@@ -13,12 +13,17 @@ namespace elZach.Common
 
         public static Texture2D GetCopy(this Texture2D source)
         {
+            return source.GetCopy(RenderTextureFormat.Default, RenderTextureReadWrite.Linear);
+        }
+
+        public static Texture2D GetCopy(this Texture2D source, RenderTextureFormat format, RenderTextureReadWrite rw)
+        {
             RenderTexture tmp = RenderTexture.GetTemporary(
                 source.width,
                 source.height,
                 0,
-                RenderTextureFormat.Default,
-                RenderTextureReadWrite.Linear);
+                format,
+                rw);
 
             Graphics.Blit(source, tmp);
             RenderTexture previous = RenderTexture.active;
