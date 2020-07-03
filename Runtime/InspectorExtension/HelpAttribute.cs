@@ -30,6 +30,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
+namespace elZach.Common { // my namespace even though its not from me
 [AttributeUsage(AttributeTargets.Field, Inherited = true)]
 public class HelpAttribute : PropertyAttribute
 {
@@ -228,3 +229,4 @@ public class HelpDrawer : PropertyDrawer
         Error,
     }
 #endif
+}

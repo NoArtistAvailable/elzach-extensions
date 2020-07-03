@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
+namespace elZach.Common { // my namespace even though its not from me
 [CustomPropertyDrawer(typeof(DisplayScriptableObjectPropertiesAttribute))]
 public class DisplayScriptableObjectPropertiesDrawer : PropertyDrawer
 {
@@ -82,4 +83,5 @@ public class DisplayScriptableObjectPropertiesDrawer : PropertyDrawer
     {
         this.DrawerHeight += height;
     }
+}
 }

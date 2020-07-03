@@ -2,5 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DisplayScriptableObjectPropertiesAttribute : PropertyAttribute { }
+namespace elZach.Common{
+    public class DisplayScriptableObjectPropertiesAttribute : PropertyAttribute { }
+}
 

@@ -4,7 +4,7 @@ using System.Reflection;
 using System;
 using System.Collections;
 
-namespace elzach.common
+namespace elZach.Common
 {
     public class ScriptUtilityWindow : EditorWindow
     {

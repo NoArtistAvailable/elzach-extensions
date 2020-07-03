@@ -1,6 +1,11 @@
 {
   "name": "elzach.extensions",
-  "displayName": "elzach CommonExtensions",
+  "displayName": "elZach CommonExtensions",
+  "author": {
+    "name": "elZach",
+    "email": "dont@message.me",
+    "url": ""
+  },
   "version": "0.0.1",
   "unity": "2020.1",
   "unityRelease": "0a10",
