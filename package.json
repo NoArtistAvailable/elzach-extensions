@@ -6,10 +6,10 @@
     "email": "dont@message.me",
     "url": ""
   },
-  "version": "0.0.1",
+  "version": "0.0.2",
   "unity": "2020.1",
   "unityRelease": "0a10",
-  "description": "Package which contains certain functions, which are often useful.",
+  "description": "Package which contains common functions, neccessary for other tools.",
   "keywords": [
     "Extension"
   ],
