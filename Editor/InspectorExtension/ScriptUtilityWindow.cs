@@ -124,5 +124,17 @@ namespace elZach.Common
                 }
             }
         }
+
+        [UnityEditor.MenuItem("Assets/Create/ScriptableObject", true, 1)]
+        static bool ValidateMenuCreateScriptableObject()
+        {
+            bool valid = UnityEditor.Selection.activeObject is MonoScript;
+            return valid;
+        }
+        [UnityEditor.MenuItem("Assets/Create/ScriptableObject", false, 1)]
+        static void MenuCreateScriptableObject()
+        {
+            CreateScriptableObject(Selection.activeObject as MonoScript);
+        }
     }
 }
