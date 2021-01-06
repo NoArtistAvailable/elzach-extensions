@@ -1,12 +1,12 @@
 {
-  "name": "elzach.extensions",
+  "name": "com.elzach.extensions",
   "displayName": "elZach CommonExtensions",
   "author": {
     "name": "elZach",
     "email": "dont@message.me",
     "url": ""
   },
-  "version": "0.0.4",
+  "version": "0.0.5",
   "unity": "2020.1",
   "unityRelease": "0a10",
   "description": "Package which contains common functions, neccessary for other tools.",
