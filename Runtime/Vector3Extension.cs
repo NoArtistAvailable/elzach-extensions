@@ -29,5 +29,11 @@ namespace elZach.Common
         {
             return new Vector2(xyz.x, xyz.y);
         }
+
+        public static bool Approximately(this Vector3 xyz, Vector3 compareTo, float precision = 0.0001f)
+        {
+            if (Vector3.Distance(xyz, compareTo) >= precision) return false;
+            return true;
+        }
     }
 }
