@@ -24,7 +24,6 @@ namespace elZach.Common
         public void OnEnable()
         {
             var t = target as EditorNoteBehaviour;
-
             if (!t.data)
             {
                 if (EditorWindow.HasOpenInstances<EditorNoteWindow>())
@@ -47,9 +46,21 @@ namespace elZach.Common
             SaveNote(t);
         }
 
+        void OnFocus(bool value)
+        {
+            //Debug.Log("Focus: " + value);
+            var t = target as EditorNoteBehaviour;
+            if (!value) SaveNote(t);
+            if (value) this.OnEnable();
+        }
+
+        static bool focusLastFrame;
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
+            bool focus = UnityEditorInternal.InternalEditorUtility.isApplicationActive;
+            if (focus != focusLastFrame) OnFocus(focus);
+            focusLastFrame = focus;
             var t = target as EditorNoteBehaviour;
             if (t.data)
             {
