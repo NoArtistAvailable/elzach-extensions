@@ -10,7 +10,7 @@ namespace elZach.Common
 {
     public class EditorNoteBehaviour : MonoBehaviour
     {
-        public TextAsset data;
+        public TextAsset file;
     }
 
 #if UNITY_EDITOR
@@ -24,20 +24,20 @@ namespace elZach.Common
         public void OnEnable()
         {
             var t = target as EditorNoteBehaviour;
-            if (!t.data)
+            if (!t.file)
             {
                 if (EditorWindow.HasOpenInstances<EditorNoteWindow>())
                 {
                     EditorNoteWindow window = (EditorNoteWindow)EditorWindow.GetWindow(typeof(EditorNoteWindow));
-                    if (window.file) t.data = window.file;
+                    if (window.file) t.file = window.file;
                     //if (isCaller) window.calledBy = this;
                 }
             }
 
-            if(t.data)
-                message = t.data.text;
+            if(t.file)
+                message = t.file.text;
 
-            hadDataPreviousFrame = t.data;
+            hadDataPreviousFrame = t.file;
         }
 
         private void OnDisable()
@@ -62,18 +62,18 @@ namespace elZach.Common
             if (focus != focusLastFrame) OnFocus(focus);
             focusLastFrame = focus;
             var t = target as EditorNoteBehaviour;
-            if (t.data)
+            if (t.file)
             {
                 if (!hadDataPreviousFrame) this.OnEnable();
                 int linesCount = message.Split('\n').Length;
-                float minHeight = Mathf.Max(300, (linesCount + 2) * lineHeight);
+                float minHeight = Mathf.Max(50, (linesCount + 2) * lineHeight);
                 var rect = EditorGUILayout.GetControlRect(GUILayout.MinHeight(minHeight), GUILayout.ExpandHeight(true));
                 message = EditorGUI.TextArea(rect, message);
             }
             else if(GUILayout.Button("Create New"))
             {
                 EditorNoteWindow window = (EditorNoteWindow)EditorWindow.GetWindow(typeof(EditorNoteWindow));
-                if (window.file) t.data = window.file;
+                if (window.file) t.file = window.file;
                 window.calledBy = this;
             }
         }
@@ -81,13 +81,13 @@ namespace elZach.Common
         public bool HasData()
         {
             var t = target as EditorNoteBehaviour;
-            return t.data;
+            return t.file;
         }
 
         public void SetNoteFile(TextAsset file)
         {
             var t = target as EditorNoteBehaviour;
-            t.data = file;
+            t.file = file;
             this.OnEnable();
         }
 
@@ -98,13 +98,13 @@ namespace elZach.Common
 
         static void SaveNote(EditorNoteBehaviour t, string message)
         {
-            if (!t.data) return;
-            if (message != t.data.text)
+            if (!t.file) return;
+            if (message != t.file.text)
             {
-                File.WriteAllText(UnityEditor.AssetDatabase.GetAssetPath(t.data), message);
-                EditorUtility.SetDirty(t.data);
+                File.WriteAllText(UnityEditor.AssetDatabase.GetAssetPath(t.file), message);
+                EditorUtility.SetDirty(t.file);
                 AssetDatabase.Refresh();
-                Debug.Log("[Note] saved changes to note.", t.data);
+                Debug.Log("[EditorNotes] " + t.name + " saved changes to " + t.file.name + " (Note).", t.file);
             }
         }
     }
