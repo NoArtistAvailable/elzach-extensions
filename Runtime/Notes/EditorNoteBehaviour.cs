@@ -30,7 +30,6 @@ namespace elZach.Common
                 {
                     EditorNoteWindow window = (EditorNoteWindow)EditorWindow.GetWindow(typeof(EditorNoteWindow));
                     if (window.file) t.file = window.file;
-                    //if (isCaller) window.calledBy = this;
                 }
             }
 
@@ -147,25 +146,13 @@ namespace elZach.Common
                         go.hideFlags = HideFlags.HideAndDontSave;
                         var notescript = MonoScript.FromMonoBehaviour(go.GetComponent<EditorNoteBehaviour>());
                         DragAndDrop.objectReferences = new Object[] { notescript };
-                        //DragAndDrop.SetGenericData("MonoScript", notescript);
-                        //DragAndDrop.objectReferences
                     }
                 }
-                
-                //if (e.type == EventType.DragUpdated)
-                //{
-                //    DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
-                //    Event.current.Use();
-                //}
-                //else if (e.type == EventType.DragPerform)
-                //{
-                //    DragAndDrop.AcceptDrag();
-                //}
             }
 
             if(GUILayout.Button("Save As File"))
             {
-                var path = EditorUtility.SaveFilePanelInProject("Saving Note", "New Note", "txt", "A message");
+                var path = EditorUtility.SaveFilePanelInProject("Saving Note", "New Note", "md", "A message");
                 File.WriteAllText(path, message);
                 AssetDatabase.Refresh();
                 file = (TextAsset) AssetDatabase.LoadAssetAtPath(path, typeof(TextAsset));
