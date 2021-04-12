@@ -11,6 +11,15 @@ namespace elZach.Common
     public class EditorNoteBehaviour : MonoBehaviour
     {
         public TextAsset file;
+        public bool showInScene;
+
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            if (!showInScene || !file) return;
+            Handles.Label(transform.position, file.text);
+        }
+#endif
     }
 
 #if UNITY_EDITOR
