@@ -8,6 +8,7 @@ namespace elZach.EditorHelper
     {
         public static string EnsureAssetDataPath(string path)
         {
+            path = path.Replace(@"\", "/");
             if (path.Contains(Application.dataPath))
                 return "Assets" + path.Substring(Application.dataPath.Length);
             else return path;
