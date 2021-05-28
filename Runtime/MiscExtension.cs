@@ -35,5 +35,14 @@ namespace elZach.Common
 
             return copy;
         }
+
+        //https://answers.unity.com/questions/1652854/how-to-get-set-hdr-color-intensity.html
+        private const byte k_MaxByteForOverexposedColor = 191; //internal Unity const
+        public static float GetIntensity(this Color col)
+        {
+            var maxColorComponent = col.maxColorComponent;
+            var scaleFactor = k_MaxByteForOverexposedColor / maxColorComponent;
+            return Mathf.Log(255f / scaleFactor) / Mathf.Log(2f);
+        }
     }
 }
