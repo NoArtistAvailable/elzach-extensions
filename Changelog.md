@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+## [0.0.8] - 2021-10-24
+- improved EnsureDatapath function
+- added getIntensity to color utility
+- added attributes for additional info (better tooltip)
+- first draft of nonserializedattribute
+- deprecated Button attribute | replaced with button class (no more editor overwrites)
+- added utility to log dirtied scene objects
+
 ## [0.0.7] - 2021-04-12
 - refined EditorNotes
 
