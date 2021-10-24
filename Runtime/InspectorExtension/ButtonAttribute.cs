@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace elZach.Common
 {
+    [Obsolete("Button attribute has been deprecated use Button<YourClass> buttonName = new Button<YourClass>(x=>x.YourFunctionCall()) instead.")]
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
     public sealed class ButtonAttribute : Attribute
     {
