@@ -13,5 +13,12 @@ namespace elZach.EditorHelper
                 return "Assets" + path.Substring(Application.dataPath.Length);
             else return path;
         }
+
+        public static string MakeAbsolutePath(string relativePath)
+        {
+            relativePath = relativePath.Replace(@"\", "/");
+            if (relativePath.Contains(Application.dataPath)) return relativePath;
+            return Application.dataPath.Substring(0, Application.dataPath.Length - "Assets".Length) + relativePath;
+        }
     }
 }
