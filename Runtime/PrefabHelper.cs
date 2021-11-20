@@ -17,7 +17,8 @@ namespace elZach.Common
     public class PrefabHelper : MonoBehaviour
     {
 #if UNITY_EDITOR
-        [Button("Setup Editor Events")]
+        //[Button("Setup Editor Events")]
+        public Button<PrefabHelper> setupEditorEventsButton = new Button<PrefabHelper>(x => x.SetEventsToEditorTime());
         public void SetEventsToEditorTime()
         {
             for (int i = 0; i < OnSavingPrefab.GetPersistentEventCount(); i++)

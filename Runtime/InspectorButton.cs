@@ -100,7 +100,10 @@ namespace elZach.Common
 				{
 					if (button.color != null)
 						GUI.color = button.color.Value;
-					if (GUI.Button(position, ObjectNames.NicifyVariableName(fieldInfo.Name)))
+					string buttonName = ObjectNames.NicifyVariableName(fieldInfo.Name);
+					buttonName = buttonName.Replace("Button ", "");
+					buttonName = buttonName.Replace(" Button", "");
+					if (GUI.Button(position, buttonName))
 					{
 						button.Invoke(instance);
 					}
