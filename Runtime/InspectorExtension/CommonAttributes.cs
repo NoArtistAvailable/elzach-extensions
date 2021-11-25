@@ -25,4 +25,16 @@ namespace elZach.Common
             this.relative = relative;
         }
     }
+
+    [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
+    public class ShowSpriteAttribute : PropertyAttribute
+    {
+        public float height;
+
+        public ShowSpriteAttribute(float height)
+        {
+            this.height = height;
+        }
+
+    }
 }

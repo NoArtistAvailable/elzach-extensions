@@ -86,4 +86,52 @@ namespace elZach.Common
         //     position.position = new Vector2(position.position.x, position.position.y + base.GetPropertyHeight(property, label));
         // }
     }
+    
+    [CustomPropertyDrawer(typeof(ShowSpriteAttribute))]
+    public class ShowSpriteAttributeDrawer : PropertyDrawer
+    {
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return base.GetPropertyHeight(property, label) + (attribute as ShowSpriteAttribute).height;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            //base.OnGUI(position, property, label);
+            EditorGUI.PropertyField(position, property, label, true);
+            position.y += EditorGUIUtility.singleLineHeight;
+            position.height -= EditorGUIUtility.singleLineHeight;
+            var tex = property.objectReferenceValue as Sprite;
+            if (tex != null)
+            {
+                //EditorGUI.DrawTextureTransparent(position, tex.texture, ScaleMode.ScaleToFit);
+                DrawTexturePreview(position, tex);
+            }
+        }
+        
+        //taken from https://forum.unity.com/threads/drawing-a-sprite-in-editor-window.419199/
+        private void DrawTexturePreview(Rect position, Sprite sprite)
+        {
+            Vector2 fullSize = new Vector2(sprite.texture.width, sprite.texture.height);
+            Vector2 size = new Vector2(sprite.textureRect.width, sprite.textureRect.height);
+ 
+            Rect coords = sprite.textureRect;
+            coords.x /= fullSize.x;
+            coords.width /= fullSize.x;
+            coords.y /= fullSize.y;
+            coords.height /= fullSize.y;
+ 
+            Vector2 ratio;
+            ratio.x = position.width / size.x;
+            ratio.y = position.height / size.y;
+            float minRatio = Mathf.Min(ratio.x, ratio.y);
+ 
+            Vector2 center = position.center;
+            position.width = size.x * minRatio;
+            position.height = size.y * minRatio;
+            position.center = center;
+ 
+            GUI.DrawTextureWithTexCoords(position, sprite.texture, coords);
+        }
+    }
 }
