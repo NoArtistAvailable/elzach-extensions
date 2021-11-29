@@ -122,7 +122,7 @@ namespace elZach.Common
         }
         
         //taken from https://forum.unity.com/threads/drawing-a-sprite-in-editor-window.419199/
-        private void DrawTexturePreview(Rect position, Sprite sprite)
+        public static void DrawTexturePreview(Rect position, Sprite sprite)
         {
             Vector2 fullSize = new Vector2(sprite.texture.width, sprite.texture.height);
             Vector2 size = new Vector2(sprite.textureRect.width, sprite.textureRect.height);
