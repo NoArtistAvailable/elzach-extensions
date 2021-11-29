@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using elZach.EditorHelper;
 using UnityEditor;
 using UnityEngine;
@@ -12,10 +13,21 @@ namespace elZach.Common
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             if(!(attribute as StringOnlyAttribute).showOnlyValue) position = EditorGUI.PrefixLabel(position, label);
-            if(property.propertyType==SerializedPropertyType.ObjectReference)
-                GUI.Label(position, property.objectReferenceValue.name);
-            if(property.propertyType==SerializedPropertyType.String)
-                GUI.Label(position, property.stringValue);
+            switch (property.propertyType)
+            {
+                case SerializedPropertyType.ObjectReference:
+                    GUI.Label(position, property.objectReferenceValue.name);
+                    break;
+                case SerializedPropertyType.String:
+                    GUI.Label(position, property.stringValue);
+                    break;
+                case SerializedPropertyType.Integer:
+                    GUI.Label(position, property.intValue.ToString());
+                    break;
+                case SerializedPropertyType.Float:
+                    GUI.Label(position, property.floatValue.ToString(CultureInfo.InvariantCulture));
+                    break;
+            }
         }
     }
     
