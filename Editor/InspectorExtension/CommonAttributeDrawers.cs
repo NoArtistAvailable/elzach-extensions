@@ -146,4 +146,22 @@ namespace elZach.Common
             GUI.DrawTextureWithTexCoords(position, sprite.texture, coords);
         }
     }
+    
+    [CustomPropertyDrawer(typeof(Vector2RangeAttribute))]
+    public class Vector2RangeAttributeDrawer : PropertyDrawer
+    {
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            var rangeAttribute = attribute as Vector2RangeAttribute;
+            Vector2 value = property.vector2Value;
+            position.width -= 60;
+            EditorGUI.MinMaxSlider(position, label, ref value.x, ref value.y, rangeAttribute.minMax.x,
+                rangeAttribute.minMax.y);
+            position.x += position.width + 10;
+            position.width = 60;
+            EditorGUI.LabelField(position,value.ToString());
+            
+            property.vector2Value = value;
+        }
+    }
 }

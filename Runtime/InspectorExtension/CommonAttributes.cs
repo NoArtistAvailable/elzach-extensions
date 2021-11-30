@@ -35,6 +35,16 @@ namespace elZach.Common
         {
             this.height = height;
         }
+    }
+    
+    [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
+    public class Vector2RangeAttribute : PropertyAttribute
+    {
+        public Vector2 minMax;
 
+        public Vector2RangeAttribute(float min, float max)
+        {
+            this.minMax = new Vector2(min, max);
+        }
     }
 }
