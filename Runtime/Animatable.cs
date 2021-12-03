@@ -40,6 +40,7 @@ namespace elZach.Common
             }
 
             public bool world = false;
+            public bool loop = false;
             public AnimationCurve curve = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(1f, 1f));
             public float time = 0.25f;
             public TransformOptions animate;
@@ -148,6 +149,7 @@ namespace elZach.Common
             // if (clip.animate.HasFlag(TransformOptions.rotation)) Debug.Log($"Rotation {Quaternion.LerpUnclamped(startRot, targetRot, endValue)}", this);
             clip.events.OnEnded.Invoke();
             currentTransition = null;
+            if (clip.loop) chainAtEndOfCurrent += () => Play(clip);
             chainAtEndOfCurrent?.Invoke();
             chainAtEndOfCurrent = null;
         }
