@@ -9,7 +9,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace elzach.Common
+namespace elZach.Common
 {
     public class Animatable : MonoBehaviour
     {
