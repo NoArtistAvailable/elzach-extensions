@@ -107,6 +107,7 @@ namespace elZach.Common
         {
             // if(currentTransition!=null) Debug.Log($"Playing Clip even though one is already Playing");
             if (currentTransition != null) StopCoroutine(currentTransition);
+            if (!gameObject.activeInHierarchy) return;
             currentTransition = StartCoroutine(TransitionTo(clip));
             while (currentTransition != null) await Task.Yield();
         }
