@@ -46,6 +46,19 @@ namespace elZach.Common
             public TransformOptions animate;
             public TransformData data;
             public Events events;
+
+            public void Evaluate(float progress, Transform transform, Vector3 startPos, Vector3 targetPos, Quaternion startRot, Quaternion targetRot, Vector3 startScale, Vector3 targetScale)
+            {
+                float value = curve.Evaluate(progress);
+                if (animate.HasFlag(TransformOptions.position))
+                    transform.localPosition = Vector3.LerpUnclamped(startPos, targetPos, value);
+                if (animate.HasFlag(TransformOptions.rotation))
+                    transform.localRotation = Quaternion.LerpUnclamped(startRot, targetRot, value);
+                if (animate.HasFlag(TransformOptions.scale))
+                    transform.localScale = Vector3.LerpUnclamped(startScale, targetScale, value);
+            }
+            
+            
 #if UNITY_EDITOR
             // public Button<Clip> playClipButton = new Button<Clip>(x =>
             // {
@@ -61,7 +74,7 @@ namespace elZach.Common
         public int animateAtOnEnableTo;
 
         public List<Clip> clips;
-        [NonSerialized] public int currentIndex = 0;
+        //[NonSerialized] public Clip currentClip;
 
         private Coroutine currentTransition;
 
@@ -106,7 +119,12 @@ namespace elZach.Common
         public async Task Play(Clip clip)
         {
             // if(currentTransition!=null) Debug.Log($"Playing Clip even though one is already Playing");
-            if (currentTransition != null) StopCoroutine(currentTransition);
+            if (currentTransition != null)
+            {
+                if (clip.curve.GetLastKey().value == 0f) //if we're going into a bouncing animation we need to make sure that we don't have skewed values to start with
+                    while (currentTransition != null) await Task.Yield();
+                else StopCoroutine(currentTransition);
+            }
             if (!gameObject.activeInHierarchy) return;
             currentTransition = StartCoroutine(TransitionTo(clip));
             while (currentTransition != null) await Task.Yield();
@@ -114,6 +132,7 @@ namespace elZach.Common
 
         IEnumerator TransitionTo(Clip clip)
         {
+            //currentClip = clip;
             Vector3 startPos = transform.localPosition;
             Vector3 targetPos = clip.data.localPos;
             if (clip.world) targetPos = Quaternion.Inverse(transform.rotation) * clip.data.localPos;
@@ -129,25 +148,11 @@ namespace elZach.Common
             while (progress < 1f)
             {
                 progress += Time.deltaTime / clip.time;
-                float value = clip.curve.Evaluate(progress);
-                if (clip.animate.HasFlag(TransformOptions.position))
-                    transform.localPosition = Vector3.LerpUnclamped(startPos, targetPos, value);
-                if (clip.animate.HasFlag(TransformOptions.rotation))
-                    transform.localRotation = Quaternion.LerpUnclamped(startRot, targetRot, value);
-                if (clip.animate.HasFlag(TransformOptions.scale))
-                    transform.localScale = Vector3.LerpUnclamped(startScale, targetScale, value);
+                clip.Evaluate(progress, transform, startPos, targetPos, startRot, targetRot, startScale, targetScale);
                 yield return null;
             }
+            clip.Evaluate(1f, transform, startPos, targetPos, startRot, targetRot, startScale, targetScale);
 
-            var endValue = clip.curve.Evaluate(1f);
-            if (clip.animate.HasFlag(TransformOptions.position))
-                transform.localPosition = Vector3.LerpUnclamped(startPos, targetPos, endValue);
-            if (clip.animate.HasFlag(TransformOptions.rotation))
-                transform.localRotation = Quaternion.LerpUnclamped(startRot, targetRot, endValue);
-            if (clip.animate.HasFlag(TransformOptions.scale))
-                transform.localScale = Vector3.LerpUnclamped(startScale, targetScale, endValue);
-
-            // if (clip.animate.HasFlag(TransformOptions.rotation)) Debug.Log($"Rotation {Quaternion.LerpUnclamped(startRot, targetRot, endValue)}", this);
             clip.events.OnEnded.Invoke();
             currentTransition = null;
             if (clip.loop) chainAtEndOfCurrent += () => Play(clip);
