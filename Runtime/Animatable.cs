@@ -86,6 +86,14 @@ namespace elZach.Common
                 Play(animateAtOnEnableTo);
             }
         }
+		void OnDisable()
+        {
+            if (currentTransition != null)
+            {
+                StopCoroutine(currentTransition);
+                currentTransition = null;
+            }
+        }
 
         public void SetTo(int index) => SetTo(clips[index]);
 
@@ -111,6 +119,11 @@ namespace elZach.Common
         {
             //var state = clips[index];
             // Debug.Log($"Setting {gameObject.name} to state {clips.IndexOf(state)}", this);
+			if (currentTransition != null)
+            {
+                StopCoroutine(currentTransition);
+                currentTransition = null;
+            }
             if (state.animate.HasFlag(TransformOptions.position)) transform.localPosition = state.data.localPos;
             if (state.animate.HasFlag(TransformOptions.rotation)) transform.localEulerAngles = state.data.localRotation;
             if (state.animate.HasFlag(TransformOptions.scale)) transform.localScale = state.data.localScale;
