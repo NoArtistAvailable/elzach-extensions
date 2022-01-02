@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Reflection;
 using elZach.EditorHelper;
 using UnityEditor;
 using UnityEngine;
@@ -162,6 +163,38 @@ namespace elZach.Common
             EditorGUI.LabelField(position,value.ToString());
             
             property.vector2Value = value;
+        }
+    }
+    
+    [CustomPropertyDrawer(typeof(ShowIfAttribute))]
+    public class ShowIfAttributeDrawer : PropertyDrawer
+    {
+        private ShowIfAttribute Conditional => attribute as ShowIfAttribute;
+        
+        bool Condition(UnityEngine.Object target)
+        {
+            var type = target.GetType();
+            var field = type.GetField(Conditional.Condition, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (field!=null)
+                return field.GetValue(target) is bool && (bool) field.GetValue(target);
+            var property = type.GetProperty(Conditional.Condition, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (property!=null)
+                return property.GetValue(target) is bool && (bool) property.GetValue(target);
+            Debug.Log($"{type.Name} has neither field nor property with name {Conditional.Condition} - make sure the values access type is public");
+            return false;
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            if (Condition(property.serializedObject.targetObject))
+                return base.GetPropertyHeight(property, label);
+            return 0;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            if (Condition(property.serializedObject.targetObject)) 
+                EditorGUI.PropertyField(position, property, label, true);
         }
     }
 }

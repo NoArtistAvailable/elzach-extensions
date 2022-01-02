@@ -47,4 +47,15 @@ namespace elZach.Common
             this.minMax = new Vector2(min, max);
         }
     }
+
+    [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
+    public class ShowIfAttribute : PropertyAttribute
+    {
+        public readonly string Condition;
+
+        public ShowIfAttribute(string condition)
+        {
+            this.Condition = condition;
+        }
+    }
 }
