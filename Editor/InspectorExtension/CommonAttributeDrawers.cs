@@ -174,12 +174,14 @@ namespace elZach.Common
         
         bool Condition(SerializedProperty property)
         {
-            var target = property.serializedObject.targetObject;
+            object target = property.serializedObject.targetObject;
             var propertyPath = property.propertyPath;
             propertyPath = (propertyPath != null && propertyPath.Contains(".")) ?
-                propertyPath.Substring(0, propertyPath.LastIndexOf(".", StringComparison.Ordinal)) + "." + Conditional.Condition
-                : Conditional.Condition;
-            return (bool) GetValue(target, propertyPath);
+                propertyPath.Substring(0, propertyPath.LastIndexOf(".", StringComparison.Ordinal))
+                : "";
+            if (propertyPath.Length > 0)
+                target = property.serializedObject.FindProperty(propertyPath)?.boxedValue;
+            return (bool) GetValue(target, Conditional.Condition);
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -198,20 +200,12 @@ namespace elZach.Common
         static object GetValue(object src, string valueName)
         {
             var type = src.GetType();
-            if(valueName.Contains("."))//complex type nested
-            {
-                var temp = valueName.Split(new char[] { '.' }, 2);
-                return GetValue(GetValue(src, temp[0]), temp[1]);
-            }
-            else
-            {
-                var field = type.GetField(valueName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                if (field != null)
-                    return field.GetValue(src);
-                var property = type.GetProperty(valueName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                if (property != null)
-                    return property.GetValue(src);
-            }
+            var field = type.GetField(valueName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (field != null)
+                return field.GetValue(src);
+            var property = type.GetProperty(valueName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (property != null)
+                return property.GetValue(src);
             Debug.Log($"{type.Name} has neither field nor property with name {valueName} - make sure the values access type is public");
             return false;
         }
