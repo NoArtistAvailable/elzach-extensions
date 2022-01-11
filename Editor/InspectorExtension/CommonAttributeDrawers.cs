@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
@@ -171,30 +172,48 @@ namespace elZach.Common
     {
         private ShowIfAttribute Conditional => attribute as ShowIfAttribute;
         
-        bool Condition(UnityEngine.Object target)
+        bool Condition(SerializedProperty property)
         {
-            var type = target.GetType();
-            var field = type.GetField(Conditional.Condition, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            if (field!=null)
-                return field.GetValue(target) is bool && (bool) field.GetValue(target);
-            var property = type.GetProperty(Conditional.Condition, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            if (property!=null)
-                return property.GetValue(target) is bool && (bool) property.GetValue(target);
-            Debug.Log($"{type.Name} has neither field nor property with name {Conditional.Condition} - make sure the values access type is public");
-            return false;
+            var target = property.serializedObject.targetObject;
+            var propertyPath = property.propertyPath;
+            propertyPath = (propertyPath != null && propertyPath.Contains(".")) ?
+                propertyPath.Substring(0, propertyPath.LastIndexOf(".", StringComparison.Ordinal)) + "." + Conditional.Condition
+                : Conditional.Condition;
+            return (bool) GetValue(target, propertyPath);
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            if (Condition(property.serializedObject.targetObject))
+            if (Condition(property))
                 return base.GetPropertyHeight(property, label);
             return 0;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (Condition(property.serializedObject.targetObject)) 
+            if (Condition(property))
                 EditorGUI.PropertyField(position, property, label, true);
+        }
+
+        static object GetValue(object src, string valueName)
+        {
+            var type = src.GetType();
+            if(valueName.Contains("."))//complex type nested
+            {
+                var temp = valueName.Split(new char[] { '.' }, 2);
+                return GetValue(GetValue(src, temp[0]), temp[1]);
+            }
+            else
+            {
+                var field = type.GetField(valueName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (field != null)
+                    return field.GetValue(src);
+                var property = type.GetProperty(valueName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (property != null)
+                    return property.GetValue(src);
+            }
+            Debug.Log($"{type.Name} has neither field nor property with name {valueName} - make sure the values access type is public");
+            return false;
         }
     }
 }
