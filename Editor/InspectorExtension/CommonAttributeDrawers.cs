@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
+using elZach.Access;
 using elZach.EditorHelper;
 using UnityEditor;
 using UnityEngine;
@@ -180,7 +181,9 @@ namespace elZach.Common
                 propertyPath.Substring(0, propertyPath.LastIndexOf(".", StringComparison.Ordinal))
                 : "";
             if (propertyPath.Length > 0)
-                target = property.serializedObject.FindProperty(propertyPath)?.boxedValue;
+            {
+                target = property.serializedObject.FindProperty(propertyPath)?.GetInternalStructValue();
+            }
             return (bool) GetValue(target, Conditional.Condition);
         }
 
