@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -36,6 +37,20 @@ namespace elZach.Common
             return copy;
         }
 
+        public static Vector3 FlattenInput(this Camera cam, Vector2 input) => cam.transform.FlattenInput(input);
+        public static Vector3 FlattenInput(this Camera cam, Vector2 input, Vector3 plane) => cam.transform.FlattenInput(input, plane);
+        public static Vector3 FlattenInput(this Transform transform, Vector2 input)
+        {
+            return 
+                transform.forward.XZDirection() * input.y
+                + transform.right.XZDirection() * input.x;
+        }
+        public static Vector3 FlattenInput(this Transform transform, Vector2 input, Vector3 plane)
+        {
+            var fwd = Vector3.ProjectOnPlane(transform.forward, plane).normalized;
+            var rgt = Vector3.ProjectOnPlane(transform.right, plane).normalized;
+            return fwd * input.y + rgt * input.x;
+        }
         //https://answers.unity.com/questions/1652854/how-to-get-set-hdr-color-intensity.html
         private const byte k_MaxByteForOverexposedColor = 191; //internal Unity const
         public static float GetIntensity(this Color col)
