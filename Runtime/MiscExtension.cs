@@ -7,6 +7,12 @@ namespace elZach.Common
 {
     public static class MiscExtension
     {
+        public static T OrSet<T>(this T value, Func<T> getFunc) where T : UnityEngine.Object
+        {
+            if (!value) value = getFunc.Invoke();
+            return value;
+        }
+        
         public static Keyframe GetLastKey(this AnimationCurve curve)
         {
             return curve.keys[curve.keys.Length - 1];
