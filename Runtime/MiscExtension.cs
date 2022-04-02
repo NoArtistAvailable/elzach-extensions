@@ -51,6 +51,7 @@ namespace elZach.Common
             var rgt = Vector3.ProjectOnPlane(transform.right, plane).normalized;
             return fwd * input.y + rgt * input.x;
         }
+
         //https://answers.unity.com/questions/1652854/how-to-get-set-hdr-color-intensity.html
         private const byte k_MaxByteForOverexposedColor = 191; //internal Unity const
         public static float GetIntensity(this Color col)
@@ -128,6 +129,23 @@ namespace elZach.Common
                 }
                 return max;
             }
+        }
+        
+        public static List<T> GetNeighbours<T>(this T[,] grid, int x, int y)
+        {
+            List<T> returnList = new List<T>();
+            int xMax = grid.GetUpperBound(0);
+            int yMax = grid.GetUpperBound(1);
+            for(int _x = x - 1; _x <= x + 1; _x++)
+            {
+                if (_x < 0 || _x >= xMax) continue;
+                for (int _y = y - 1; _y <= y + 1; _y++)
+                {
+                    if (_y < 0 || _y >= yMax || (_y == y && _x == x)) continue;
+                    returnList.Add(grid[_x, _y]);
+                }
+            }
+            return returnList;
         }
     }
 }
