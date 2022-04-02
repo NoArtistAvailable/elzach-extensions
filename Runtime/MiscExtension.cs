@@ -44,5 +44,15 @@ namespace elZach.Common
             var scaleFactor = k_MaxByteForOverexposedColor / maxColorComponent;
             return Mathf.Log(255f / scaleFactor) / Mathf.Log(2f);
         }
+
+        public static string[] GetPropertyNames(this Shader shader)
+        {
+            string[] propertyNames = new string[shader.GetPropertyCount()];
+            for (int i = 0; i < propertyNames.Length; i++)
+            {
+                propertyNames[i] = shader.GetPropertyName(i);
+            }
+            return propertyNames;
+        }
     }
 }
