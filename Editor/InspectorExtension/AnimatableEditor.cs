@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEditor;
+using elZach.Access;
 
 namespace elZach.Common
 {
@@ -32,10 +33,12 @@ namespace elZach.Common
 			serializedObject.ApplyModifiedProperties();
 			
 			if (t.clips == null) return;
+			EditorGUI.BeginDisabledGroup(!Application.isPlaying);
 			EditorGUILayout.BeginHorizontal();
 			for(int i=0; i < t.clips.Count;i++)
 				if(GUILayout.Button(i.ToString())) t.Play(i);
 			EditorGUILayout.EndHorizontal();
+			EditorGUI.EndDisabledGroup();
 		}
 	}
 
@@ -45,7 +48,7 @@ namespace elZach.Common
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
 		{
 			if (!property.isExpanded) return EditorGUIUtility.singleLineHeight;
-			Animatable.Clip clip = property.boxedValue as Animatable.Clip;
+			Animatable.Clip clip = property.GetInternalStructValue() as Animatable.Clip;
 			int lines = 5;
 			lines += (clip.animate.HasFlag(Animatable.TransformOptions.position) ? 1 : 0)
 			         + (clip.animate.HasFlag(Animatable.TransformOptions.rotation) ? 1 : 0)
@@ -69,7 +72,7 @@ namespace elZach.Common
 			if (property.isExpanded)
 			{
 				EditorGUI.BeginChangeCheck();
-				Animatable.Clip clip = property.boxedValue as Animatable.Clip;
+				Animatable.Clip clip = property.GetInternalStructValue() as Animatable.Clip;
 				rect = position;
 				rect.y += EditorGUIUtility.singleLineHeight;
 				rect.height = EditorGUIUtility.singleLineHeight * 2;
