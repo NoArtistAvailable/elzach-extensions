@@ -153,17 +153,29 @@ namespace elZach.Common
     [CustomPropertyDrawer(typeof(Vector2RangeAttribute))]
     public class Vector2RangeAttributeDrawer : PropertyDrawer
     {
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            var rangeAttribute = attribute as Vector2RangeAttribute;
+            return rangeAttribute.showValues ? base.GetPropertyHeight(property, label) + EditorGUIUtility.singleLineHeight : EditorGUIUtility.singleLineHeight;
+        }
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             var rangeAttribute = attribute as Vector2RangeAttribute;
-            Vector2 value = property.vector2Value;
-            position.width -= 60;
-            EditorGUI.MinMaxSlider(position, label, ref value.x, ref value.y, rangeAttribute.minMax.x,
-                rangeAttribute.minMax.y);
-            position.x += position.width + 10;
-            position.width = 60;
-            EditorGUI.LabelField(position,value.ToString());
+            EditorGUI.PrefixLabel(position, label);
             
+            Vector2 value = property.vector2Value;
+            position.height = EditorGUIUtility.singleLineHeight;
+            position.width -= EditorGUIUtility.labelWidth;
+            position.x += EditorGUIUtility.labelWidth;
+            EditorGUI.MinMaxSlider(position, "", ref value.x, ref value.y, rangeAttribute.minMax.x,
+                rangeAttribute.minMax.y);
+            if (rangeAttribute.showValues)
+            {
+                position.y += EditorGUIUtility.singleLineHeight;
+                value = EditorGUI.Vector2Field(position, "", value);
+            }
+
             property.vector2Value = value;
         }
     }

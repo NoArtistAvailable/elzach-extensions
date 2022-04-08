@@ -41,10 +41,12 @@ namespace elZach.Common
     public class Vector2RangeAttribute : PropertyAttribute
     {
         public Vector2 minMax;
+        public bool showValues;
 
-        public Vector2RangeAttribute(float min, float max)
+        public Vector2RangeAttribute(float min, float max, bool showValues = true)
         {
             this.minMax = new Vector2(min, max);
+            this.showValues = showValues;
         }
     }
 
