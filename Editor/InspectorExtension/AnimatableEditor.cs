@@ -60,7 +60,7 @@ namespace elZach.Common
 		{
 			var numberString = Regex.Match(label.text, @"\d+").Value;
 			label.text = "Animation State " + numberString + " ( ";
-			var animate = (Animatable.TransformOptions) property.FindPropertyRelative(nameof(Animatable.Clip.animate)).enumValueFlag;
+			var animate = (Animatable.TransformOptions) property.FindPropertyRelative(nameof(Animatable.Clip.animate)).intValue;
 			if (animate.HasFlag(Animatable.TransformOptions.position)) label.text += "Position ";
 			if (animate.HasFlag(Animatable.TransformOptions.rotation)) label.text += "Rotation ";
 			if (animate.HasFlag(Animatable.TransformOptions.scale)) label.text += "Scale ";
@@ -85,7 +85,7 @@ namespace elZach.Common
 				property.FindPropertyRelative(nameof(Animatable.Clip.time)).floatValue =
 					EditorGUI.FloatField(rect, clip.time);
 				rect.x += rect.width + 3;
-				property.FindPropertyRelative(nameof(Animatable.Clip.animate)).enumValueFlag =
+				property.FindPropertyRelative(nameof(Animatable.Clip.animate)).intValue =
 					Convert.ToInt32(EditorGUI.EnumFlagsField(rect, clip.animate));
 	
 				rect.y += rect.height;
