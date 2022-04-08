@@ -70,11 +70,26 @@ namespace elZach.Common
 
         }
 
-        public bool animateAtOnEnable = false;
-        public int animateAtOnEnableTo;
+        public bool animateAtOnEnable = true;
+        public int animateAtOnEnableTo = 1;
 
-        public List<Clip> clips;
-        //[NonSerialized] public Clip currentClip;
+        public List<Clip> clips = new List<Clip>()
+        {
+            new Clip()
+            {
+                curve = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(1f, 1f)),
+                time = 0.25f,
+                data = new TransformData() { localScale = Vector3.zero },
+                animate = TransformOptions.scale
+            },
+            new Clip()
+            {
+                curve = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(0.75f,1.2f), new Keyframe(1f, 1f)),
+                time = 0.35f,
+                data = new TransformData() { localScale = Vector3.one },
+                animate = TransformOptions.scale
+            }
+        };
 
         private Coroutine currentTransition;
 
