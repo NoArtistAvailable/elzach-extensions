@@ -57,19 +57,8 @@ namespace elZach.Common
                 if (animate.HasFlag(TransformOptions.scale))
                     transform.localScale = Vector3.LerpUnclamped(startScale, targetScale, value);
             }
-            
-            
-#if UNITY_EDITOR
-            // public Button<Clip> playClipButton = new Button<Clip>(x =>
-            // {
-            //     SerializedObject so = new SerializedObject(x);
-            //     var anim = so.targetObject as Animatable;
-            //     anim.Play(x);
-            // });
-#endif
-
         }
-
+        
         public bool animateAtOnEnable = true;
         public int animateAtOnEnableTo = 1;
 

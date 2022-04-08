@@ -1,6 +1,23 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+
+## [0.0.9] - 2022-04-08
+- added folder path attribute
+- added Animatable component for quick animations
+- added LazyGet<>
+- added Object.OrSet
+- added SceneReference
+- added string only attribute
+- added sprite draw attribute
+- added Vector2 range attribute
+- added ShowIf attribute
+- added Gizmo Renderer
+- added extension to get propertynames from shader
+- added IEnumerable extension for sorting by Min/Max
+- added Vector3 flatten to plane
+- added extension for getting neighbours from position in 2D array
+
 ## [0.0.8] - 2021-10-24
 - improved EnsureDatapath function
 - added getIntensity to color utility
