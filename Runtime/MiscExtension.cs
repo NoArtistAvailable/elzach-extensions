@@ -7,10 +7,21 @@ namespace elZach.Common
 {
     public static class MiscExtension
     {
+        [Obsolete("Don't use this, value isn't getting cached. -> use value.OrSet(ref value, Func) instead")]
         public static T OrSet<T>(this T value, Func<T> getFunc) where T : UnityEngine.Object
         {
             if (!value) value = getFunc.Invoke();
             return value;
+        }
+
+        public static T OrSet<T>(this T value, ref T refValue, Func<T> getFunc) where T : UnityEngine.Object
+        {
+            if (!value)
+            {
+                refValue = getFunc.Invoke();
+                // if(refValue) Debug.Log(refValue.GetType(), refValue);
+            }
+            return refValue;
         }
         
         public static Keyframe GetLastKey(this AnimationCurve curve)
@@ -153,5 +164,8 @@ namespace elZach.Common
             }
             return returnList;
         }
+
+        public static T GetRandom<T>(this T[] array) => array[UnityEngine.Random.Range(0, array.Length)];
+        public static T GetRandom<T>(this List<T> list) => list[UnityEngine.Random.Range(0, list.Count)];
     }
 }

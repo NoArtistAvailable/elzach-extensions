@@ -35,5 +35,8 @@ namespace elZach.Common
             if (Vector3.Distance(xyz, compareTo) >= precision) return false;
             return true;
         }
+
+        public static float GetRandom(this Vector2 range) => UnityEngine.Random.Range(range.x, range.y);
+        public static int GetRandom(this Vector2Int range) => UnityEngine.Random.Range(range.x, range.y);
     }
 }
