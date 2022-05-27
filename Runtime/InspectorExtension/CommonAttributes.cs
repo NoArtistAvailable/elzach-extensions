@@ -60,4 +60,15 @@ namespace elZach.Common
             this.Condition = condition;
         }
     }
+
+    [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
+    public class DropdownAttribute : PropertyAttribute
+    {
+        public readonly string FunctionName;
+
+        public DropdownAttribute(string functionName)
+        {
+            this.FunctionName = functionName;
+        }
+    }
 }

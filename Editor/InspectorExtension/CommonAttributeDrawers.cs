@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Reflection;
 using elZach.Access;
 using elZach.EditorHelper;
@@ -223,6 +224,52 @@ namespace elZach.Common
                 return property.GetValue(src);
             Debug.Log($"{type.Name} has neither field nor property with name {valueName} - make sure the values access type is public");
             return false;
+        }
+    }
+
+    [CustomPropertyDrawer(typeof(DropdownAttribute))]
+    public class DropdownAttributeDrawer : PropertyDrawer
+    {
+        private DropdownAttribute Dropdown => attribute as DropdownAttribute;
+        
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return EditorGUIUtility.singleLineHeight;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            position = EditorGUI.PrefixLabel(position, label);
+            if (EditorGUI.DropdownButton(position, new GUIContent(property.stringValue), FocusType.Passive))
+            {
+                GenericMenu menu = new GenericMenu();
+                foreach (var option in Options(property))
+                {
+                    menu.AddItem(new GUIContent(option), false, () =>
+                    {
+                        Debug.Log($"{option} chosen!");
+                        property.stringValue = option;
+                        property.serializedObject.ApplyModifiedProperties();
+                    });
+                }
+                menu.ShowAsContext();
+            }
+        }
+        
+        string[] Options(SerializedProperty property)
+        {
+            object target;
+            if (property.depth == 0) target = property.serializedObject.targetObject;
+            else
+            {
+                string parentPropPath = property.propertyPath.Substring(0, property.propertyPath.Length - property.name.Length - 1);
+                target = property.serializedObject.FindProperty(parentPropPath).GetInternalStructValue();
+            }
+            var targetType = target.GetType();
+            var method = targetType.GetMethod(Dropdown.FunctionName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (method == null) return new string[] {$"No suitable method with name {Dropdown.FunctionName} found"};
+            var result = method.Invoke(target, null);
+            return (string[]) result;
         }
     }
 }
