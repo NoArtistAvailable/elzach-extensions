@@ -63,7 +63,6 @@ namespace elZach.Common
                     for (var i = 0; i < colorData.Count; i++)
                     {
                         var custom = colorData[i];
-                        Debug.Log((Color) Lerp(customStartTarget[i].start, customStartTarget[i].target, value));
                         custom.SetTargetValue((Color) Lerp(customStartTarget[i].start, customStartTarget[i].target, value));
                     }
 
