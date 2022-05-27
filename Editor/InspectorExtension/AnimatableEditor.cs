@@ -68,6 +68,8 @@ namespace elZach.Common
 			if (animate.HasFlag(Animatable.TransformOptions.position)) label.text += "Position ";
 			if (animate.HasFlag(Animatable.TransformOptions.rotation)) label.text += "Rotation ";
 			if (animate.HasFlag(Animatable.TransformOptions.scale)) label.text += "Scale ";
+			if (animate.HasFlag(Animatable.TransformOptions.color)) label.text += "Color ";
+			if (animate.HasFlag(Animatable.TransformOptions.single)) label.text += "Float ";
 			label.text += ")";
 			EditorGUI.BeginProperty(position, label, property);
 			var rect = position;
