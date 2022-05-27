@@ -1,11 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using elZach.Common;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -19,7 +16,9 @@ namespace elZach.Common
         {
             position = 1 << 1,
             rotation = 1 << 2,
-            scale = 1 << 3
+            scale = 1 << 3,
+            color = 1 << 4,
+            single = 1 << 5
         }
 
         [Serializable]
@@ -45,9 +44,12 @@ namespace elZach.Common
             public float time = 0.25f;
             public TransformOptions animate;
             public TransformData data;
+
+            public List<ColorReference> colorData = new List<ColorReference>();
+            public List<FloatReference> floatData = new List<FloatReference>();
             public Events events;
 
-            public void Evaluate(float progress, Transform transform, Vector3 startPos, Vector3 targetPos, Quaternion startRot, Quaternion targetRot, Vector3 startScale, Vector3 targetScale)
+            public void Evaluate(float progress, Transform transform, Vector3 startPos, Vector3 targetPos, Quaternion startRot, Quaternion targetRot, Vector3 startScale, Vector3 targetScale, params (object start, object target)[] customStartTarget)
             {
                 float value = curve.Evaluate(progress);
                 if (animate.HasFlag(TransformOptions.position))
@@ -56,6 +58,22 @@ namespace elZach.Common
                     transform.localRotation = Quaternion.LerpUnclamped(startRot, targetRot, value);
                 if (animate.HasFlag(TransformOptions.scale))
                     transform.localScale = Vector3.LerpUnclamped(startScale, targetScale, value);
+                int customOffset = 0;
+                if(animate.HasFlag(TransformOptions.color))
+                    for (var i = 0; i < colorData.Count; i++)
+                    {
+                        var custom = colorData[i];
+                        Debug.Log((Color) Lerp(customStartTarget[i].start, customStartTarget[i].target, value));
+                        custom.SetTargetValue((Color) Lerp(customStartTarget[i].start, customStartTarget[i].target, value));
+                    }
+
+                customOffset += colorData.Count;
+                if(animate.HasFlag(TransformOptions.single))
+                    for (var i = customOffset; i < floatData.Count + customOffset; i++)
+                    {
+                        var custom = floatData[i - customOffset];
+                        custom.SetTargetValue((float) Lerp(customStartTarget[i].start, customStartTarget[i].target, value));
+                    }
             }
         }
         
@@ -131,6 +149,8 @@ namespace elZach.Common
             if (state.animate.HasFlag(TransformOptions.position)) transform.localPosition = state.data.localPos;
             if (state.animate.HasFlag(TransformOptions.rotation)) transform.localEulerAngles = state.data.localRotation;
             if (state.animate.HasFlag(TransformOptions.scale)) transform.localScale = state.data.localScale;
+            if (state.animate.HasFlag(TransformOptions.color)) foreach(var color in state.colorData) color.SetTargetValue();
+            if (state.animate.HasFlag(TransformOptions.single)) foreach(var single in state.floatData) single.SetTargetValue();
         }
 
         public async Task Play(Clip clip)
@@ -159,16 +179,21 @@ namespace elZach.Common
 
             Vector3 startScale = transform.localScale;
             Vector3 targetScale = clip.data.localScale;
+            
+            var customs = clip.colorData
+                .Select<ColorReference, (object start, object target)>(x => (x.GetTargetValue(), x.value))
+                .Concat(clip.floatData.Select<FloatReference, (object startPos, object target)>(x=> (x.GetTargetValue(), x.value)))
+                .ToArray();
 
             float progress = 0f;
             clip.events.OnStarted.Invoke();
             while (progress < 1f)
             {
                 progress += Time.deltaTime / clip.time;
-                clip.Evaluate(progress, transform, startPos, targetPos, startRot, targetRot, startScale, targetScale);
+                clip.Evaluate(progress, transform, startPos, targetPos, startRot, targetRot, startScale, targetScale, customs);
                 yield return null;
             }
-            clip.Evaluate(1f, transform, startPos, targetPos, startRot, targetRot, startScale, targetScale);
+            clip.Evaluate(1f, transform, startPos, targetPos, startRot, targetRot, startScale, targetScale, customs);
 
             clip.events.OnEnded.Invoke();
             currentTransition = null;
@@ -176,6 +201,26 @@ namespace elZach.Common
             chainAtEndOfCurrent?.Invoke();
             chainAtEndOfCurrent = null;
         }
+
+        [Serializable] public class ColorReference : PropertyReference<Color>{}
+        [Serializable] public class FloatReference : PropertyReference<float>{}
+        
+        
+        public static object Lerp(object a, object b, float time)
+        {
+            var type = a.GetType();
+            if (type == typeof(float)) return Mathf.LerpUnclamped((float) a, (float) b, time);
+            // if (type == typeof(Vector2)) return Vector2.LerpUnclamped((Vector2) a, (Vector2) b, time);
+            // if (type == typeof(Vector3)) return Vector3.LerpUnclamped((Vector3) a, (Vector3) b, time);
+            // if (type == typeof(Vector4)) return Vector4.LerpUnclamped((Vector4) a, (Vector4) b, time);
+            // if (type == typeof(Quaternion)) return Quaternion.LerpUnclamped((Quaternion) a, (Quaternion) b, time);
+            if (type == typeof(Color)) return Color.LerpUnclamped((Color) a, (Color) b, time);
+            // if (type == typeof(int)) return Mathf.RoundToInt(Mathf.LerpUnclamped((int) a, (int) b, time));
+
+            return null;
+        }
+        
+        
 #pragma warning restore CS4014
     }
 }

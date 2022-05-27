@@ -53,7 +53,11 @@ namespace elZach.Common
 			lines += (clip.animate.HasFlag(Animatable.TransformOptions.position) ? 1 : 0)
 			         + (clip.animate.HasFlag(Animatable.TransformOptions.rotation) ? 1 : 0)
 			         + (clip.animate.HasFlag(Animatable.TransformOptions.scale) ? 1 : 0);
-			return EditorGUIUtility.singleLineHeight * lines + EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(Animatable.Clip.events))) + 16;
+			return EditorGUIUtility.singleLineHeight * lines 
+			       + EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(Animatable.Clip.events))) 
+			       + (clip.animate.HasFlag(Animatable.TransformOptions.color) ? EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(Animatable.Clip.colorData))) : 0)
+			       + (clip.animate.HasFlag(Animatable.TransformOptions.single) ? EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(Animatable.Clip.floatData))) : 0)
+			       + 16;
 		}
 	
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -128,6 +132,30 @@ namespace elZach.Common
 					EditorGUI.PropertyField(rect,
 						property.FindPropertyRelative(nameof(clip.data) + "." + nameof(clip.data.localScale)));
 					rect.y += rect.height;
+				}
+
+				if (clip.animate.HasFlag(Animatable.TransformOptions.color))
+				{
+					var customListProperty = property.FindPropertyRelative(nameof(Animatable.Clip.colorData));
+					if (customListProperty != null)
+					{
+						rect.height = EditorGUI.GetPropertyHeight(customListProperty);
+						EditorGUI.PropertyField(rect, customListProperty);
+						rect.y += rect.height;
+						rect.height = EditorGUIUtility.singleLineHeight;
+					}
+				}
+				
+				if (clip.animate.HasFlag(Animatable.TransformOptions.single))
+				{
+					var customListProperty = property.FindPropertyRelative(nameof(Animatable.Clip.floatData));
+					if (customListProperty != null)
+					{
+						rect.height = EditorGUI.GetPropertyHeight(customListProperty);
+						EditorGUI.PropertyField(rect, customListProperty);
+						rect.y += rect.height;
+						rect.height = EditorGUIUtility.singleLineHeight;
+					}
 				}
 	
 				var eventsProperty = property.FindPropertyRelative(nameof(clip.events));
