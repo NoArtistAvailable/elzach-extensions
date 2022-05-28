@@ -240,15 +240,21 @@ namespace elZach.Common
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             position = EditorGUI.PrefixLabel(position, label);
-            if (EditorGUI.DropdownButton(position, new GUIContent(property.stringValue), FocusType.Passive))
+            if (EditorGUI.DropdownButton(position, new GUIContent(ExtractStringFrom(property.GetInternalStructValue())), FocusType.Passive))
             {
                 GenericMenu menu = new GenericMenu();
                 foreach (var option in Options(property))
                 {
-                    menu.AddItem(new GUIContent(option), false, () =>
+                    menu.AddItem(new GUIContent(ExtractStringFrom(option)), false, () =>
                     {
                         Debug.Log($"{option} chosen!");
-                        property.stringValue = option;
+
+                        var nestedObjectType = property.serializedObject.targetObject.GetType();
+                        var memberNfo = nestedObjectType.GetMember(property.name);
+                        foreach(var nfo in memberNfo)
+                            if (nfo is FieldInfo field)
+                                field.SetValue(property.serializedObject.targetObject, option);
+
                         property.serializedObject.ApplyModifiedProperties();
                     });
                 }
@@ -256,7 +262,7 @@ namespace elZach.Common
             }
         }
         
-        string[] Options(SerializedProperty property)
+        object[] Options(SerializedProperty property)
         {
             object target;
             if (property.depth == 0) target = property.serializedObject.targetObject;
@@ -269,7 +275,16 @@ namespace elZach.Common
             var method = targetType.GetMethod(Dropdown.FunctionName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             if (method == null) return new string[] {$"No suitable method with name {Dropdown.FunctionName} found"};
             var result = method.Invoke(target, null);
-            return (string[]) result;
+            return (object[]) result;
+        }
+
+        public static string ExtractStringFrom(object input)
+        {
+            if (input == null) return "null";
+            var type = input.GetType();
+            if (type.IsSubclassOf(typeof(UnityEngine.Object))) return ((UnityEngine.Object) input).name;
+            if (type == typeof(string)) return (string) input;
+            return input.ToString();
         }
     }
 }
