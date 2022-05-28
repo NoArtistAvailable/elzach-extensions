@@ -243,7 +243,8 @@ namespace elZach.Common
             if (EditorGUI.DropdownButton(position, new GUIContent(ExtractStringFrom(property.GetInternalStructValue())), FocusType.Passive))
             {
                 GenericMenu menu = new GenericMenu();
-                foreach (var option in Options(property))
+                var options = Options(property);
+                foreach (var option in options)
                 {
                     menu.AddItem(new GUIContent(ExtractStringFrom(option)), false, () =>
                     {
@@ -258,6 +259,7 @@ namespace elZach.Common
                         property.serializedObject.ApplyModifiedProperties();
                     });
                 }
+                if(options.Length == 0) menu.AddItem(new GUIContent("None"), false, null);
                 menu.ShowAsContext();
             }
         }
