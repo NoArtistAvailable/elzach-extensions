@@ -20,8 +20,8 @@ namespace elZach.Common
 
         protected string[] GetValidProperties()
         {
-            var targetType = component.GetType();
-            return targetType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            var targetType = component?.GetType();
+            return targetType?.GetProperties(BindingFlags.Instance | BindingFlags.Public)
                 .Where(x => x.PropertyType == typeof(T))
                 .Select(x => x.Name).ToArray();
         }

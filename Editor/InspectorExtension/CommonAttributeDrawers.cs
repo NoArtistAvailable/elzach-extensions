@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using elZach.Access;
 using elZach.EditorHelper;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace elZach.Common
@@ -249,12 +251,50 @@ namespace elZach.Common
                     menu.AddItem(new GUIContent(ExtractStringFrom(option)), false, () =>
                     {
                         Debug.Log($"{option} chosen!");
+                        var rootObjectType = property.serializedObject.targetObject.GetType();
+                        var fieldInfo = rootObjectType.GetField(property.propertyPath);
+                        //TODO: refactor all of this
+                        if (fieldInfo == null)
+                        {
+                            // check for nested object
+                            var rootPath = property.propertyPath.Substring(0, property.propertyPath.IndexOf("."));
+                            var typeInList = rootObjectType.GetField(rootPath).FieldType; //.GenericTypeArguments[0];
+                            Debug.Log($"{typeInList}");
+                            if (typeInList.GetInterface(nameof(IList)) != null)
+                            {
+                                var parentPath =
+                                    property.propertyPath.Substring(0, property.propertyPath.LastIndexOf("."));
+                                parentPath = parentPath.Substring(0, parentPath.LastIndexOf("."));
+                        
+                                Debug.Log($"{parentPath} / {property.propertyPath}");
+                                var parentFieldInfo = rootObjectType.GetField(parentPath);
+                                var list = (IList) parentFieldInfo.GetValue(property.serializedObject.targetObject);
+                                var index = int.Parse(Regex.Replace(property.displayName, "[^0-9]", ""));
+                                Debug.Log($"{property.name} | {property.displayName} | {index}");
+                                list[index] = option;
+                            } 
+                            else
+                            {
+                        
+                                // foreach(var memb in typeInList.GetMembers(BindingFlags.Instance | BindingFlags.Public))
+                                //     Debug.Log(memb.Name);
+                        
+                                var subPath =
+                                    property.propertyPath.Substring(property.propertyPath.IndexOf(".") + 1);
+                                subPath = subPath.Substring(subPath.IndexOf(".") + 1);
+                                // subPath = subPath.Substring(subPath.IndexOf(".") + 1);
+                                // subPath = subPath.Substring(0, subPath.IndexOf("."));
+                                Debug.Log(subPath);
+                                var listFieldNfo = typeInList.GetField(subPath);
+                                var listValue = rootObjectType.GetField(rootPath)
+                                    .GetValue(property.serializedObject.targetObject);
+                                listFieldNfo.SetValue(listValue, option);
+                                // var subList = (IList) listFieldNfo.GetValue(listValue);
+                                // Debug.Log($"{subPath} : {listFieldNfo} : {subList.Count}");
+                            }
+                        }
 
-                        var nestedObjectType = property.serializedObject.targetObject.GetType();
-                        var memberNfo = nestedObjectType.GetMember(property.name);
-                        foreach(var nfo in memberNfo)
-                            if (nfo is FieldInfo field)
-                                field.SetValue(property.serializedObject.targetObject, option);
+                        fieldInfo?.SetValue(property.serializedObject.targetObject, option);
 
                         property.serializedObject.ApplyModifiedProperties();
                     });
@@ -267,15 +307,26 @@ namespace elZach.Common
         object[] Options(SerializedProperty property)
         {
             object target;
-            if (property.depth == 0) target = property.serializedObject.targetObject;
+            if (property.depth == 0 || Dropdown.FunctionInRootObject) target = property.serializedObject.targetObject;
             else
             {
-                string parentPropPath = property.propertyPath.Substring(0, property.propertyPath.Length - property.name.Length - 1);
-                target = property.serializedObject.FindProperty(parentPropPath).GetInternalStructValue();
+                string parentPropPath = property.propertyPath.Substring(0, property.propertyPath.LastIndexOf("."));
+                var parentProp = property.serializedObject.FindProperty(parentPropPath);
+                if (parentProp == null)
+                {
+                    Debug.Log($"No value at {parentPropPath} / {property.propertyPath} - {property.name}");
+                    return null;
+                }
+
+                if (parentProp.isArray)
+                {
+                    Debug.Log($"array at {parentProp.propertyPath}");
+                }
+                target = parentProp.isArray ? property.serializedObject.targetObject : parentProp.GetInternalStructValue();
             }
             var targetType = target.GetType();
             var method = targetType.GetMethod(Dropdown.FunctionName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            if (method == null) return new string[] {$"No suitable method with name {Dropdown.FunctionName} found"};
+            if (method == null) return new string[] {$"No suitable method with name {Dropdown.FunctionName} in {targetType} found"};
             var result = method.Invoke(target, null);
             return (object[]) result;
         }
@@ -284,8 +335,12 @@ namespace elZach.Common
         {
             if (input == null) return "null";
             var type = input.GetType();
-            if (type.IsSubclassOf(typeof(UnityEngine.Object))) return ((UnityEngine.Object) input).name;
-            if (type == typeof(string)) return (string) input;
+            // if (type.IsSubclassOf(typeof(UnityEngine.Object)))
+            // {
+            //     var obj = (UnityEngine.Object) input;
+            //     return obj ? obj.name : "null";
+            // }
+            // if (type == typeof(string)) return (string) input;
             return input.ToString();
         }
     }

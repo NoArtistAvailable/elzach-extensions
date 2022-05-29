@@ -65,10 +65,12 @@ namespace elZach.Common
     public class DropdownAttribute : PropertyAttribute
     {
         public readonly string FunctionName;
+        public readonly bool FunctionInRootObject;
 
-        public DropdownAttribute(string functionName)
+        public DropdownAttribute(string functionName, bool functionInRootObject = false)
         {
             this.FunctionName = functionName;
+            this.FunctionInRootObject = functionInRootObject;
         }
     }
 }

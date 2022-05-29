@@ -45,8 +45,8 @@ namespace elZach.Common
             public TransformOptions animate;
             public TransformData data;
 
-            public List<ColorReference> colorData = new List<ColorReference>();
-            public List<FloatReference> floatData = new List<FloatReference>();
+            public List<AnimatableHelpers.ColorReference> colorData = new List<AnimatableHelpers.ColorReference>();
+            public List<AnimatableHelpers.FloatReference> floatData = new List<AnimatableHelpers.FloatReference>();
             public Events events;
 
             public void Evaluate(float progress, Transform transform, Vector3 startPos, Vector3 targetPos, Quaternion startRot, Quaternion targetRot, Vector3 startScale, Vector3 targetScale, params (object start, object target)[] customStartTarget)
@@ -63,7 +63,7 @@ namespace elZach.Common
                     for (var i = 0; i < colorData.Count; i++)
                     {
                         var custom = colorData[i];
-                        custom.SetTargetValue((Color) Lerp(customStartTarget[i].start, customStartTarget[i].target, value));
+                        custom.TargetSourceValue = (Color) AnimatableHelpers.Lerp(customStartTarget[i].start, customStartTarget[i].target, value);
                     }
 
                 customOffset += colorData.Count;
@@ -71,7 +71,7 @@ namespace elZach.Common
                     for (var i = customOffset; i < floatData.Count + customOffset; i++)
                     {
                         var custom = floatData[i - customOffset];
-                        custom.SetTargetValue((float) Lerp(customStartTarget[i].start, customStartTarget[i].target, value));
+                        custom.TargetSourceValue = (float) AnimatableHelpers.Lerp(customStartTarget[i].start, customStartTarget[i].target, value);
                     }
             }
         }
@@ -148,8 +148,8 @@ namespace elZach.Common
             if (state.animate.HasFlag(TransformOptions.position)) transform.localPosition = state.data.localPos;
             if (state.animate.HasFlag(TransformOptions.rotation)) transform.localEulerAngles = state.data.localRotation;
             if (state.animate.HasFlag(TransformOptions.scale)) transform.localScale = state.data.localScale;
-            if (state.animate.HasFlag(TransformOptions.color)) foreach(var color in state.colorData) color.SetTargetValue();
-            if (state.animate.HasFlag(TransformOptions.single)) foreach(var single in state.floatData) single.SetTargetValue();
+            if (state.animate.HasFlag(TransformOptions.color)) foreach(var color in state.colorData) color.ApplyToSource();
+            if (state.animate.HasFlag(TransformOptions.single)) foreach(var single in state.floatData) single.ApplyToSource();
         }
 
         public async Task Play(Clip clip)
@@ -180,8 +180,8 @@ namespace elZach.Common
             Vector3 targetScale = clip.data.localScale;
             
             var customs = clip.colorData
-                .Select<ColorReference, (object start, object target)>(x => (x.GetTargetValue(), x.value))
-                .Concat(clip.floatData.Select<FloatReference, (object startPos, object target)>(x=> (x.GetTargetValue(), x.value)))
+                .Select<AnimatableHelpers.ColorReference, (object start, object target)>(x => (x.TargetSourceValue, x.Value))
+                .Concat(clip.floatData.Select<AnimatableHelpers.FloatReference, (object startPos, object target)>(x=> (x.TargetSourceValue, x.Value)))
                 .ToArray();
 
             float progress = 0f;
@@ -201,25 +201,8 @@ namespace elZach.Common
             chainAtEndOfCurrent = null;
         }
 
-        [Serializable] public class ColorReference : PropertyReference<Color>{}
-        [Serializable] public class FloatReference : PropertyReference<float>{}
-        
-        
-        public static object Lerp(object a, object b, float time)
-        {
-            var type = a.GetType();
-            if (type == typeof(float)) return Mathf.LerpUnclamped((float) a, (float) b, time);
-            // if (type == typeof(Vector2)) return Vector2.LerpUnclamped((Vector2) a, (Vector2) b, time);
-            // if (type == typeof(Vector3)) return Vector3.LerpUnclamped((Vector3) a, (Vector3) b, time);
-            // if (type == typeof(Vector4)) return Vector4.LerpUnclamped((Vector4) a, (Vector4) b, time);
-            // if (type == typeof(Quaternion)) return Quaternion.LerpUnclamped((Quaternion) a, (Quaternion) b, time);
-            if (type == typeof(Color)) return Color.LerpUnclamped((Color) a, (Color) b, time);
-            // if (type == typeof(int)) return Mathf.RoundToInt(Mathf.LerpUnclamped((int) a, (int) b, time));
+        public Component[] GetValidComponents() => GetComponents<Component>();
 
-            return null;
-        }
-        
-        
 #pragma warning restore CS4014
     }
 }
