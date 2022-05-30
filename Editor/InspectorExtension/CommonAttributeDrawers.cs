@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using elZach.Access;
 using elZach.EditorHelper;
@@ -251,50 +252,43 @@ namespace elZach.Common
                     menu.AddItem(new GUIContent(ExtractStringFrom(option)), false, () =>
                     {
                         Debug.Log($"{option} chosen!");
-                        var rootObjectType = property.serializedObject.targetObject.GetType();
-                        var fieldInfo = rootObjectType.GetField(property.propertyPath);
-                        //TODO: refactor all of this
-                        if (fieldInfo == null)
+                        object targetObject;
+                        string path = property.propertyPath;
+                        if (property.depth == 0)
+                            targetObject = property.serializedObject.targetObject;
+                        else
                         {
-                            // check for nested object
-                            var rootPath = property.propertyPath.Substring(0, property.propertyPath.IndexOf("."));
-                            var typeInList = rootObjectType.GetField(rootPath).FieldType; //.GenericTypeArguments[0];
-                            Debug.Log($"{typeInList}");
-                            if (typeInList.GetInterface(nameof(IList)) != null)
+                            var hierarchy = property.GetObjectHierarchy();
+                            path = path.Substring(path.LastIndexOf(".")+1);
+                            targetObject = hierarchy[hierarchy.Count - 2];
+                            if (path.EndsWith("]"))
                             {
-                                var parentPath =
-                                    property.propertyPath.Substring(0, property.propertyPath.LastIndexOf("."));
+                                Debug.Log("We're in an array");
+                                var rootObjectType = targetObject.GetType();
+                                
+                                var parentPath = property.propertyPath.Substring(0, property.propertyPath.LastIndexOf("."));
                                 parentPath = parentPath.Substring(0, parentPath.LastIndexOf("."));
+                                parentPath = parentPath.Substring(parentPath.LastIndexOf(".")+1);
                         
-                                Debug.Log($"{parentPath} / {property.propertyPath}");
+                                Debug.Log($"{parentPath} / {property.propertyPath} / {rootObjectType}");
                                 var parentFieldInfo = rootObjectType.GetField(parentPath);
-                                var list = (IList) parentFieldInfo.GetValue(property.serializedObject.targetObject);
+                                var list = (IList) parentFieldInfo.GetValue(targetObject);
                                 var index = int.Parse(Regex.Replace(property.displayName, "[^0-9]", ""));
                                 Debug.Log($"{property.name} | {property.displayName} | {index}");
                                 list[index] = option;
-                            } 
-                            else
-                            {
-                        
-                                // foreach(var memb in typeInList.GetMembers(BindingFlags.Instance | BindingFlags.Public))
-                                //     Debug.Log(memb.Name);
-                        
-                                var subPath =
-                                    property.propertyPath.Substring(property.propertyPath.IndexOf(".") + 1);
-                                subPath = subPath.Substring(subPath.IndexOf(".") + 1);
-                                // subPath = subPath.Substring(subPath.IndexOf(".") + 1);
-                                // subPath = subPath.Substring(0, subPath.IndexOf("."));
-                                Debug.Log(subPath);
-                                var listFieldNfo = typeInList.GetField(subPath);
-                                var listValue = rootObjectType.GetField(rootPath)
-                                    .GetValue(property.serializedObject.targetObject);
-                                listFieldNfo.SetValue(listValue, option);
-                                // var subList = (IList) listFieldNfo.GetValue(listValue);
-                                // Debug.Log($"{subPath} : {listFieldNfo} : {subList.Count}");
+                                property.serializedObject.ApplyModifiedProperties();
+                                return;
                             }
                         }
+                        var targetField = targetObject.GetType().GetField(path);
+                        if (targetField == null)
+                        {
+                            var hierarchy = property.GetObjectHierarchy();
+                            foreach (var obj in hierarchy) Debug.Log($"{obj.GetType()}");
+                            Debug.Log($"{targetObject.GetType()} doesnt contain field named {path}");
+                        }
 
-                        fieldInfo?.SetValue(property.serializedObject.targetObject, option);
+                        targetField?.SetValue(targetObject, option);
 
                         property.serializedObject.ApplyModifiedProperties();
                     });
@@ -307,22 +301,13 @@ namespace elZach.Common
         object[] Options(SerializedProperty property)
         {
             object target;
+            
             if (property.depth == 0 || Dropdown.FunctionInRootObject) target = property.serializedObject.targetObject;
             else
             {
-                string parentPropPath = property.propertyPath.Substring(0, property.propertyPath.LastIndexOf("."));
-                var parentProp = property.serializedObject.FindProperty(parentPropPath);
-                if (parentProp == null)
-                {
-                    Debug.Log($"No value at {parentPropPath} / {property.propertyPath} - {property.name}");
-                    return null;
-                }
-
-                if (parentProp.isArray)
-                {
-                    Debug.Log($"array at {parentProp.propertyPath}");
-                }
-                target = parentProp.isArray ? property.serializedObject.targetObject : parentProp.GetInternalStructValue();
+                var objects = property.GetObjectHierarchy();
+                // foreach (var obj in objects) Debug.Log(obj.GetType());
+                target = objects[objects.Count - 2];
             }
             var targetType = target.GetType();
             var method = targetType.GetMethod(Dropdown.FunctionName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
