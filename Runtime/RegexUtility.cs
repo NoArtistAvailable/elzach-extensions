@@ -6,6 +6,7 @@ namespace elZach.Common
     {
         private static readonly Regex indexRegex = new Regex(@"[(?<index>\d+)]$", RegexOptions.Compiled);
         private static readonly Regex indexAndListRegex = new Regex(@"(?<listname>\w+)\.Array\.data\[(?<index>\d+)\]$", RegexOptions.Compiled);
+        private static readonly Regex propertyFromBackingField = new Regex(@"\<(?<propertyName>\w+)\>", RegexOptions.Compiled);
 
         public static bool TryGetLastIndex(string path, out int index)
         {
@@ -31,6 +32,13 @@ namespace elZach.Common
             index = -1;
             propertyName = null;
             return false;
+        }
+
+        public static bool TryGetPropertyNameFromBackingField(string backingField, out string propertyName)
+        {
+            var match = propertyFromBackingField.Match(backingField);
+            propertyName = match.Groups["propertyName"].Value;
+            return match.Success;
         }
     }
 }

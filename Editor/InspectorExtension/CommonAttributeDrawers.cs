@@ -271,12 +271,16 @@ namespace elZach.Common
                         var targetField = targetObject.GetType().GetField(path);
                         if (targetField == null)
                         {
-                            var hierarchy = property.GetObjectHierarchy();
-                            foreach (var obj in hierarchy) Debug.Log($"{obj.GetType()}");
-                            Debug.Log($"{targetObject.GetType()} doesnt contain field named {path}");
+                            // var hierarchy = property.GetObjectHierarchy();
+                            // foreach (var obj in hierarchy) Debug.Log($"{obj.GetType()}");
+                            if (RegexUtility.TryGetPropertyNameFromBackingField(path, out var propertyName))
+                            {
+                                var propNfo = targetObject.GetType().GetProperty(propertyName);
+                                propNfo?.SetValue(targetObject, option);
+                            }
+                            else Debug.Log($"{targetObject.GetType()} doesnt contain field or backed property named {path}");
                         }
-
-                        targetField?.SetValue(targetObject, option);
+                        else targetField.SetValue(targetObject, option);
                         property.serializedObject.ApplyModifiedProperties();
                     });
                 }
