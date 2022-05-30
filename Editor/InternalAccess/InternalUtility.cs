@@ -29,6 +29,10 @@ namespace elZach.Access{
         {
             var path = prop.propertyPath.Replace(".Array.data[", "[");
             object obj = prop.serializedObject.targetObject;
+            return GetTargetObjectFromPath(obj, path);
+        }
+        private static object GetTargetObjectFromPath(object obj, string path)
+        {
             var elements = path.Split('.');
             foreach (var element in elements)
             {
@@ -105,6 +109,14 @@ namespace elZach.Access{
                 }
             }
             return hierarchy;
+        }
+
+        public static object GetParentObject(this SerializedProperty prop)
+        {
+            if (prop.depth == 0) return prop.serializedObject.targetObject;
+            var path = prop.propertyPath.Replace(".Array.data[", "[");
+            path = path.Substring(0, path.LastIndexOf("."));
+            return GetTargetObjectFromPath(prop.serializedObject.targetObject, path);
         }
     }
 }
