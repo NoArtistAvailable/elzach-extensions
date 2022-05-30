@@ -115,7 +115,8 @@ namespace elZach.Access{
         {
             if (prop.depth == 0) return prop.serializedObject.targetObject;
             var path = prop.propertyPath.Replace(".Array.data[", "[");
-            path = path.Substring(0, path.LastIndexOf("."));
+            if (path.Contains(".")) path = path.Substring(0, path.LastIndexOf("."));
+            else return prop.serializedObject.targetObject;
             return GetTargetObjectFromPath(prop.serializedObject.targetObject, path);
         }
     }

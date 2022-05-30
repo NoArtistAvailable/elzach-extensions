@@ -255,24 +255,16 @@ namespace elZach.Common
                         else
                         {
                             targetObject = property.GetParentObject();
-                            if (path.EndsWith("]")) //array & list support
+                            if (RegexUtility.TryGetLastIndex(path, out int index, out string listName)) //array & list support
                             {
                                 // We're in an array
                                 var rootObjectType = targetObject.GetType();
-                                var listName = property.propertyPath.Substring(0,
-                                    property.propertyPath.LastIndexOf(".Array.data["));
-                                listName = listName.Substring(listName.LastIndexOf(".") + 1);
-
                                 var listFieldInfo = rootObjectType.GetField(listName);
                                 var list = (IList) listFieldInfo.GetValue(targetObject);
-                                var index = int.Parse(Regex.Replace(
-                                    property.propertyPath.Substring(property.propertyPath.LastIndexOf("[")), 
-                                    "[^0-9]", ""));
                                 list[index] = option;
                                 property.serializedObject.ApplyModifiedProperties();
                                 return;
                             }
-
                             path = path.Substring(path.LastIndexOf(".") + 1);
                         }
 
@@ -285,7 +277,6 @@ namespace elZach.Common
                         }
 
                         targetField?.SetValue(targetObject, option);
-
                         property.serializedObject.ApplyModifiedProperties();
                     });
                 }
