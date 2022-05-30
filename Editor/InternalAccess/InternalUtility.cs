@@ -18,13 +18,14 @@ namespace elZach.Access{
     public static class InternalUtilityExtensions
     {
         public static object GetInternalStructValue(this SerializedProperty property)
-#if UNITY_2022_1_OR_NEWER
+#if UNITY_2022_1_OR_NEWER && false //for now this spams serialization callbacks...
             => property.structValue;
 #else
-            => GetTargetObjectOfProperty(property);
+            => property.GetTargetObjectOfProperty();
+#endif
         
         //https://forum.unity.com/threads/get-a-general-object-value-from-serializedproperty.327098/#post-7569286
-        private static object GetTargetObjectOfProperty(SerializedProperty prop)
+        private static object GetTargetObjectOfProperty(this SerializedProperty prop)
         {
             var path = prop.propertyPath.Replace(".Array.data[", "[");
             object obj = prop.serializedObject.targetObject;
@@ -82,8 +83,28 @@ namespace elZach.Access{
             return enm.Current;
         }
         
-#endif
+        public static List<object> GetObjectHierarchy(this SerializedProperty prop)
+        {
+            var path = prop.propertyPath.Replace(".Array.data[", "[");
+            object obj = prop.serializedObject.targetObject;
+            var hierarchy = new List<object>() {obj};
+            var elements = path.Split('.');
+            foreach (var element in elements)
+            {
+                if (element.Contains("["))
+                {
+                    var elementName = element.Substring(0, element.IndexOf("["));
+                    var index = System.Convert.ToInt32(element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", ""));
+                    obj = GetValue_Imp(obj, elementName, index);
+                    hierarchy.Add(obj);
+                }
+                else
+                {
+                    obj = GetValue_Imp(obj, element);
+                    hierarchy.Add(obj);
+                }
+            }
+            return hierarchy;
+        }
     }
-    
-    
 }
