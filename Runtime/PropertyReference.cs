@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -9,7 +10,7 @@ using elZach.Access;
 
 namespace elZach.Common
 {
-    public abstract class BasePropertyReference<T>
+    public abstract class BasePropertyReference<T> : IGetSetSource
     {
         public abstract Component component { get; set; }
         [Dropdown(nameof(GetValidProperties))] public string propertyPath;
@@ -36,6 +37,12 @@ namespace elZach.Common
         }
     }
 
+    interface IGetSetSource
+    {
+        public void ApplyToSource();
+        public void GetFromSource();
+    }
+
     [System.Serializable]
     public class PropertyReference<T> : BasePropertyReference<T>
     {
@@ -43,43 +50,67 @@ namespace elZach.Common
     }
     
     
-// #if UNITY_EDITOR
-//     // [CustomPropertyDrawer(typeof(FieldReference<float>))]
-//     // public class FloatDrawer : Drawer<float>{}
-//     [CustomPropertyDrawer(typeof(FieldReference<>))]
-//     public class FieldReferenceDrawer : PropertyDrawer
-//     {
-//         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-//         {
-//             return EditorGUIUtility.singleLineHeight * 5f;
-//         }
-//
-//         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-//         {
-//             // base.OnGUI(position, property, label);
-//             // var instance = property.GetInternalStructValue() as FieldReference<T>;
-//             position.height = EditorGUIUtility.singleLineHeight;
-//             EditorGUI.LabelField(position, label);
-//             position.y += position.height;
-//             // position = EditorGUI.IndentedRect(position);
-//             position.x += 16;
-//             position.width -= 16;
-//             position.height = EditorGUIUtility.singleLineHeight;
-//             EditorGUI.PropertyField(position, property.FindPropertyRelative("component"));
-//                     
-//             // if (instance.component)
-//             {
-//                 position.y += position.height;
-//                 EditorGUI.PropertyField(position, property.FindPropertyRelative("propertyPath"));
-//                 // if (!string.IsNullOrEmpty(instance.propertyPath))
-//                 {
-//                     position.y += position.height;
-//                     EditorGUI.PropertyField(position, property.FindPropertyRelative("value"));
-//                 }
-//             }
-//         }
-//     }
-// #endif
+#if UNITY_EDITOR
+    // [CustomPropertyDrawer(typeof(FieldReference<float>))]
+    // public class FloatDrawer : Drawer<float>{}
+    [CustomPropertyDrawer(typeof(PropertyReference<>))]
+    public class FieldReferenceDrawer : PropertyDrawer
+    {
+        private List<SerializedProperty> propertyList;
+        
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return property.isExpanded ? EditorGUIUtility.singleLineHeight * 4f : EditorGUIUtility.singleLineHeight;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            if (propertyList == null)
+            {
+                propertyList = new List<SerializedProperty>();
+                var enumerator = property.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    property = enumerator.Current as SerializedProperty;
+                    propertyList.Add(property.Copy());
+                }
+                property.Reset();
+            }
+            // base.OnGUI(position, property, label);
+            // var instance = property.GetInternalStructValue() as FieldReference<T>;
+            
+            position.height = EditorGUIUtility.singleLineHeight;
+            property.isExpanded = EditorGUI.Foldout (position, property.isExpanded, "");
+            position.width -= 60;
+            EditorGUI.PropertyField(position, propertyList[1], new GUIContent(property.displayName));
+            position.height += 3;
+            if (GUI.Button(new Rect(position.x+position.width,position.y,30,position.height), "get"))
+            {
+                ((IGetSetSource) property.GetInternalStructValue()).GetFromSource();
+                property.serializedObject.ApplyModifiedProperties();
+            }
+            if (GUI.Button(new Rect(position.x+position.width+30,position.y,30,position.height), "set"))
+            {
+                ((IGetSetSource) property.GetInternalStructValue()).ApplyToSource();
+            }
+            position.width += 60;
+            if (!property.isExpanded) return;
+            position.y += position.height + 2;
+            EditorGUI.indentLevel++;
+            position = EditorGUI.IndentedRect(position);
+            // position.x += 16;
+            // position.width -= 16;
+            position.height = EditorGUIUtility.singleLineHeight;
+            
+            EditorGUI.PropertyField(position, propertyList[2]);
+            position.y += position.height + 2;
+            EditorGUI.PropertyField(position, propertyList[0]);
+            position.y += position.height + 2;
+            // EditorGUI.PropertyField(position, propertyList[1]);
+            EditorGUI.indentLevel--;
+        }
+    }
+#endif
     
     // [System.Serializable]
     // public class FieldReference<T> : ComponentReference<T>
