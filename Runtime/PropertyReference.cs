@@ -53,8 +53,8 @@ namespace elZach.Common
 #if UNITY_EDITOR
     // [CustomPropertyDrawer(typeof(FieldReference<float>))]
     // public class FloatDrawer : Drawer<float>{}
-    [CustomPropertyDrawer(typeof(PropertyReference<>))]
-    public class FieldReferenceDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(BasePropertyReference<>),true)]
+    public class PropertyReferenceDrawer : PropertyDrawer
     {
         private List<SerializedProperty> propertyList;
         
@@ -78,36 +78,40 @@ namespace elZach.Common
             }
             // base.OnGUI(position, property, label);
             // var instance = property.GetInternalStructValue() as FieldReference<T>;
-            
-            position.height = EditorGUIUtility.singleLineHeight;
-            property.isExpanded = EditorGUI.Foldout (position, property.isExpanded, "");
-            position.width -= 60;
-            EditorGUI.PropertyField(position, propertyList[1], new GUIContent(property.displayName));
-            position.height += 3;
-            if (GUI.Button(new Rect(position.x+position.width,position.y,30,position.height), "get"))
+            var rect = position;
+            EditorGUI.BeginProperty(rect, label, property);
+            rect.height = EditorGUIUtility.singleLineHeight;
+            property.isExpanded = EditorGUI.Foldout (rect, property.isExpanded, "");
+            rect.width -= 60;
+            EditorGUI.PropertyField(rect, propertyList[1], new GUIContent(property.displayName));
+            rect.height += 3;
+            if (GUI.Button(new Rect(rect.x+rect.width,rect.y,30,rect.height), "get"))
             {
                 ((IGetSetSource) property.GetInternalStructValue()).GetFromSource();
                 property.serializedObject.ApplyModifiedProperties();
             }
-            if (GUI.Button(new Rect(position.x+position.width+30,position.y,30,position.height), "set"))
+            if (GUI.Button(new Rect(rect.x+rect.width+30,rect.y,30,rect.height), "set"))
             {
                 ((IGetSetSource) property.GetInternalStructValue()).ApplyToSource();
             }
-            position.width += 60;
-            if (!property.isExpanded) return;
-            position.y += position.height + 2;
-            EditorGUI.indentLevel++;
-            position = EditorGUI.IndentedRect(position);
-            // position.x += 16;
-            // position.width -= 16;
-            position.height = EditorGUIUtility.singleLineHeight;
-            
-            EditorGUI.PropertyField(position, propertyList[2]);
-            position.y += position.height + 2;
-            EditorGUI.PropertyField(position, propertyList[0]);
-            position.y += position.height + 2;
-            // EditorGUI.PropertyField(position, propertyList[1]);
-            EditorGUI.indentLevel--;
+            rect.width += 60;
+            if (property.isExpanded)
+            {
+                rect.y += rect.height + 2;
+                EditorGUI.indentLevel++;
+                rect = EditorGUI.IndentedRect(rect);
+                rect.x = position.x;
+                rect.width += (rect.x - position.x);
+                rect.height = EditorGUIUtility.singleLineHeight;
+
+                EditorGUI.PropertyField(rect, propertyList[2], new GUIContent("Component"));
+                rect.y += rect.height + 2;
+                EditorGUI.PropertyField(rect, propertyList[0], new GUIContent("Property"));
+                rect.y += rect.height + 2;
+                // EditorGUI.PropertyField(position, propertyList[1]);
+                EditorGUI.indentLevel--;
+            }
+            EditorGUI.EndProperty();
         }
     }
 #endif

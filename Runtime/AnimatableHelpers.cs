@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Linq;
-using System.Reflection;
 using UnityEngine;
 
 namespace elZach.Common
@@ -14,7 +12,14 @@ namespace elZach.Common
             [field: Dropdown(nameof(Animatable.GetValidComponents),true)]
             public override Component component { get; set; }
         }
-        [Serializable] public class FloatReference : PropertyReference<float>{}
+
+        [Serializable]
+        public class FloatReference : BasePropertyReference<float>
+        {
+            [field: SerializeField]
+            [field: Dropdown(nameof(Animatable.GetValidComponents),true)]
+            public override Component component { get; set; }
+        }
         public static object Lerp(object a, object b, float time)
         {
             var type = a.GetType();
