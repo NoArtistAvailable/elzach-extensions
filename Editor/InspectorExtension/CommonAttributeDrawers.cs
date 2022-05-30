@@ -1,15 +1,11 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using elZach.Access;
 using elZach.EditorHelper;
 using UnityEditor;
-using UnityEditorInternal;
 using UnityEngine;
 
 namespace elZach.Common
@@ -251,35 +247,35 @@ namespace elZach.Common
                 {
                     menu.AddItem(new GUIContent(ExtractStringFrom(option)), false, () =>
                     {
-                        Debug.Log($"{option} chosen!");
+                        // Debug.Log($"{option} chosen!");
                         object targetObject;
                         string path = property.propertyPath;
                         if (property.depth == 0)
                             targetObject = property.serializedObject.targetObject;
                         else
                         {
-                            var hierarchy = property.GetObjectHierarchy();
-                            path = path.Substring(path.LastIndexOf(".")+1);
-                            targetObject = hierarchy[hierarchy.Count - 2];
-                            if (path.EndsWith("]"))
+                            targetObject = property.GetParentObject();
+                            if (path.EndsWith("]")) //array & list support
                             {
-                                Debug.Log("We're in an array");
+                                // We're in an array
                                 var rootObjectType = targetObject.GetType();
-                                
-                                var parentPath = property.propertyPath.Substring(0, property.propertyPath.LastIndexOf("."));
-                                parentPath = parentPath.Substring(0, parentPath.LastIndexOf("."));
-                                parentPath = parentPath.Substring(parentPath.LastIndexOf(".")+1);
-                        
-                                Debug.Log($"{parentPath} / {property.propertyPath} / {rootObjectType}");
-                                var parentFieldInfo = rootObjectType.GetField(parentPath);
-                                var list = (IList) parentFieldInfo.GetValue(targetObject);
-                                var index = int.Parse(Regex.Replace(property.displayName, "[^0-9]", ""));
-                                Debug.Log($"{property.name} | {property.displayName} | {index}");
+                                var listName = property.propertyPath.Substring(0,
+                                    property.propertyPath.LastIndexOf(".Array.data["));
+                                listName = listName.Substring(listName.LastIndexOf(".") + 1);
+
+                                var listFieldInfo = rootObjectType.GetField(listName);
+                                var list = (IList) listFieldInfo.GetValue(targetObject);
+                                var index = int.Parse(Regex.Replace(
+                                    property.propertyPath.Substring(property.propertyPath.LastIndexOf("[")), 
+                                    "[^0-9]", ""));
                                 list[index] = option;
                                 property.serializedObject.ApplyModifiedProperties();
                                 return;
                             }
+
+                            path = path.Substring(path.LastIndexOf(".") + 1);
                         }
+
                         var targetField = targetObject.GetType().GetField(path);
                         if (targetField == null)
                         {
@@ -293,27 +289,21 @@ namespace elZach.Common
                         property.serializedObject.ApplyModifiedProperties();
                     });
                 }
-                if(options.Length == 0) menu.AddItem(new GUIContent("None"), false, null);
+
+                if (options.Count == 0) menu.AddItem(new GUIContent("None"), false, null);
                 menu.ShowAsContext();
             }
         }
         
-        object[] Options(SerializedProperty property)
+        IList Options(SerializedProperty property)
         {
             object target;
-            
             if (property.depth == 0 || Dropdown.FunctionInRootObject) target = property.serializedObject.targetObject;
-            else
-            {
-                var objects = property.GetObjectHierarchy();
-                // foreach (var obj in objects) Debug.Log(obj.GetType());
-                target = objects[objects.Count - 2];
-            }
+            else target = property.GetParentObject();
             var targetType = target.GetType();
             var method = targetType.GetMethod(Dropdown.FunctionName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             if (method == null) return new string[] {$"No suitable method with name {Dropdown.FunctionName} in {targetType} found"};
-            var result = method.Invoke(target, null);
-            return (object[]) result;
+            return (IList) method.Invoke(target, null);
         }
 
         public static string ExtractStringFrom(object input)
