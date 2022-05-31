@@ -3,10 +3,10 @@
   "displayName": "elZach CommonExtensions",
   "author": {
     "name": "elZach",
-    "email": "dont@message.me",
+    "email": "felix.reinemann@gmail.com",
     "url": ""
   },
-  "version": "0.0.13",
+  "version": "0.0.14",
   "unity": "2020.1",
   "unityRelease": "0a10",
   "description": "Package which contains common functions, neccessary for other tools.",
