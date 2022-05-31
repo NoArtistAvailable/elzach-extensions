@@ -268,7 +268,7 @@ namespace elZach.Common
                             path = path.Substring(path.LastIndexOf(".") + 1);
                         }
 
-                        var targetField = targetObject.GetType().GetField(path);
+                        var targetField = targetObject.GetType().GetField(path, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                         if (targetField == null)
                         {
                             // var hierarchy = property.GetObjectHierarchy();

@@ -119,5 +119,10 @@ namespace elZach.Access{
             else return prop.serializedObject.targetObject;
             return GetTargetObjectFromPath(prop.serializedObject.targetObject, path);
         }
+        
+        public static SerializedProperty FindPropertyByAutoPropertyName(this SerializedProperty obj, string propName)
+        {
+            return obj.FindPropertyRelative($"<{propName}>k__BackingField");
+        }
     }
 }

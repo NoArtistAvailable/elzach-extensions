@@ -13,11 +13,28 @@ namespace elZach.Common
     public abstract class BasePropertyReference<T> : IGetSetSource
     {
         public abstract Component component { get; set; }
-        [Dropdown(nameof(GetValidProperties))] public string propertyPath;
-        [field: SerializeField] public T Value { get; private set; }
 
-        private PropertyInfo _propertyInfo;
-        private PropertyInfo propertyInfo => _propertyInfo ??= component?.GetType().GetRuntimeProperty(propertyPath);
+        [SerializeField, Dropdown(nameof(GetValidProperties))] protected string m_propertyPath;
+        public string propertyPath
+        {
+            get => m_propertyPath;
+            set
+            {
+                m_propertyPath = value;
+                component = null;
+            }
+        }
+
+        [SerializeField] private T m_value;
+
+        public T Value
+        {
+            get => m_value;
+            private set => m_value = value;
+        }
+
+        protected PropertyInfo _propertyInfo;
+        protected PropertyInfo propertyInfo => _propertyInfo ??= component?.GetType().GetRuntimeProperty(propertyPath);
 
         protected string[] GetValidProperties()
         {
@@ -46,18 +63,25 @@ namespace elZach.Common
     [System.Serializable]
     public class PropertyReference<T> : BasePropertyReference<T>
     {
-        [field: SerializeField] public override Component component { get; set; }
+        [SerializeField] private Component m_component;
+        public override Component component
+        {
+            get => m_component;
+            set
+            {
+                m_component = value;
+                _propertyInfo = null;
+            } 
+        }
     }
     
     
 #if UNITY_EDITOR
     // [CustomPropertyDrawer(typeof(FieldReference<float>))]
     // public class FloatDrawer : Drawer<float>{}
-    [CustomPropertyDrawer(typeof(BasePropertyReference<>),true)]
+    [CustomPropertyDrawer(typeof(BasePropertyReference<>), true)]
     public class PropertyReferenceDrawer : PropertyDrawer
     {
-        private List<SerializedProperty> propertyList;
-        
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             return property.isExpanded ? EditorGUIUtility.singleLineHeight * 4f : EditorGUIUtility.singleLineHeight;
@@ -65,25 +89,13 @@ namespace elZach.Common
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (propertyList == null)
-            {
-                propertyList = new List<SerializedProperty>();
-                var enumerator = property.GetEnumerator();
-                while (enumerator.MoveNext())
-                {
-                    property = enumerator.Current as SerializedProperty;
-                    propertyList.Add(property.Copy());
-                }
-                property.Reset();
-            }
-            // base.OnGUI(position, property, label);
-            // var instance = property.GetInternalStructValue() as FieldReference<T>;
             var rect = position;
             EditorGUI.BeginProperty(rect, label, property);
             rect.height = EditorGUIUtility.singleLineHeight;
+            
             property.isExpanded = EditorGUI.Foldout (rect, property.isExpanded, "");
             rect.width -= 60;
-            EditorGUI.PropertyField(rect, propertyList[1], new GUIContent(property.displayName));
+            EditorGUI.PropertyField(rect, property.FindPropertyRelative("m_value"), new GUIContent(property.displayName));
             rect.height += 3;
             if (GUI.Button(new Rect(rect.x+rect.width,rect.y,30,rect.height), "get"))
             {
@@ -104,42 +116,15 @@ namespace elZach.Common
                 rect.width += (rect.x - position.x);
                 rect.height = EditorGUIUtility.singleLineHeight;
 
-                EditorGUI.PropertyField(rect, propertyList[2], new GUIContent("Component"));
+                EditorGUI.PropertyField(rect, property.FindPropertyRelative("m_component"), new GUIContent("Component"));
                 rect.y += rect.height + 2;
-                EditorGUI.PropertyField(rect, propertyList[0], new GUIContent("Property"));
+                EditorGUI.PropertyField(rect, property.FindPropertyRelative("m_propertyPath"), new GUIContent("Property"));
                 rect.y += rect.height + 2;
-                // EditorGUI.PropertyField(position, propertyList[1]);
                 EditorGUI.indentLevel--;
             }
             EditorGUI.EndProperty();
         }
     }
 #endif
-    
-    // [System.Serializable]
-    // public class FieldReference<T> : ComponentReference<T>
-    // {
-    //     [field : SerializeField] public override Component component { get; set; }
-    //     private FieldInfo _nfo;
-    //     FieldInfo nfo => _nfo ??= component?.GetType().GetRuntimeField(propertyPath);
-    //     
-    //     public override void SetTargetValue(T value)=>
-    //         nfo?.SetValue(component, value);
-    //
-    //     public override T GetTargetValue()
-    //     {
-    //         if (nfo == null) return default;
-    //         return (T) nfo.GetValue(component);
-    //     }
-    //     
-    //     protected override string[] GetValidProperties()
-    //     {
-    //         var targetType = component.GetType();
-    //         return targetType.GetFields(BindingFlags.Instance | BindingFlags.Public)
-    //             .Where(x => x.FieldType == typeof(T))
-    //             .Select(x => x.Name).ToArray();
-    //     }
-    // }
-    
     
 }

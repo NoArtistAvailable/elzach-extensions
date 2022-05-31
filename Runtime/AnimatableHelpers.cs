@@ -1,5 +1,8 @@
 ﻿using System;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace elZach.Common
 {
@@ -8,17 +11,33 @@ namespace elZach.Common
         [Serializable]
         public class ColorReference : BasePropertyReference<Color>
         {
-            [field: SerializeField]
-            [field: Dropdown(nameof(Animatable.GetValidComponents),true)]
-            public override Component component { get; set; }
+            [SerializeField,Dropdown(nameof(Animatable.GetValidComponents),true)] 
+            private Component m_component;
+            public override Component component
+            {
+                get => m_component;
+                set
+                {
+                    m_component = value;
+                    _propertyInfo = null;
+                } 
+            }
         }
 
         [Serializable]
         public class FloatReference : BasePropertyReference<float>
         {
-            [field: SerializeField]
-            [field: Dropdown(nameof(Animatable.GetValidComponents),true)]
-            public override Component component { get; set; }
+            [SerializeField,Dropdown(nameof(Animatable.GetValidComponents),true)] 
+            private Component m_component;
+            public override Component component
+            {
+                get => m_component;
+                set
+                {
+                    m_component = value;
+                    _propertyInfo = null;
+                } 
+            }
         }
         public static object Lerp(object a, object b, float time)
         {
