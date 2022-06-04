@@ -215,10 +215,10 @@ namespace elZach.Common
         static object GetValue(object src, string valueName)
         {
             var type = src.GetType();
-            var field = type.GetField(valueName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var field = type.GetField(valueName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (field != null)
                 return field.GetValue(src);
-            var property = type.GetProperty(valueName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var property = type.GetProperty(valueName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (property != null)
                 return property.GetValue(src);
             Debug.Log($"{type.Name} has neither field nor property with name {valueName} - make sure the values access type is public");
