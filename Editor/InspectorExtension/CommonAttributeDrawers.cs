@@ -314,4 +314,26 @@ namespace elZach.Common
             return input.ToString();
         }
     }
+
+    [CustomPropertyDrawer(typeof(LabelAsAttribute))]
+    public class LabelAsAttributeDrawer : PropertyDrawer
+    {
+        private LabelAsAttribute LabelAs => attribute as LabelAsAttribute;
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return EditorGUI.GetPropertyHeight(property, label, true);
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            string stringValue = LabelAs.Label;
+            if (LabelAs.IsProperty)
+            {
+                var obj = property.GetInternalStructValue();
+                var type = obj.GetType();
+                stringValue = type.GetProperty(LabelAs.Label)?.GetValue(obj) as string;
+            }
+            EditorGUI.PropertyField(position, property, new GUIContent(stringValue), true);
+        }
+    }
 }

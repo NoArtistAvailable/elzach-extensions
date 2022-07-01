@@ -73,4 +73,17 @@ namespace elZach.Common
             this.FunctionInRootObject = functionInRootObject;
         }
     }
+
+    [AttributeUsage(AttributeTargets.Field)]
+    public class LabelAsAttribute : PropertyAttribute
+    {
+        public string Label;
+        public bool IsProperty;
+
+        public LabelAsAttribute(string label, bool isProperty = false)
+        {
+            this.Label = label;
+            this.IsProperty = isProperty;
+        }
+    }
 }
