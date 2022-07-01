@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace elZach.Common
 {
@@ -16,12 +17,25 @@ namespace elZach.Common
 
         public static T OrSet<T>(this T value, ref T refValue, Func<T> getFunc) where T : UnityEngine.Object
         {
-            if (!value)
-            {
-                refValue = getFunc.Invoke();
-                // if(refValue) Debug.Log(refValue.GetType(), refValue);
-            }
+            if (!value) refValue = getFunc.Invoke();
             return refValue;
+        }
+
+        public static T OrSetToActive<T>(this T value, ref T refValue, Func<T> getFunc) where T : UnityEngine.Behaviour
+        {
+            if (!value || !value.isActiveAndEnabled) refValue = getFunc.Invoke();
+            return refValue;
+        }
+
+        public static void SetChangedInvoke<T>(this T value, T targetValue, out T sourceValue, Action<T> changedAction)
+        {
+            if (value == null && targetValue == null || (value != null && value.Equals(targetValue)))
+            {
+                sourceValue = targetValue;
+                return;
+            }
+            sourceValue = targetValue;
+            changedAction?.Invoke(targetValue);
         }
         
         public static Keyframe GetLastKey(this AnimationCurve curve)
@@ -167,5 +181,12 @@ namespace elZach.Common
 
         public static T GetRandom<T>(this T[] array) => array[UnityEngine.Random.Range(0, array.Length)];
         public static T GetRandom<T>(this List<T> list) => list[UnityEngine.Random.Range(0, list.Count)];
+
+        public static Vector2 LocalPositionFromScreen(this Canvas canvas, Vector2 screenPosition)
+        {
+            var scaler = canvas.GetComponent<CanvasScaler>();
+            if (!scaler) scaler = canvas.GetComponentInParent<CanvasScaler>();
+            return screenPosition - new Vector2(Screen.width, Screen.height) * 0.5f;
+        }
     }
 }
