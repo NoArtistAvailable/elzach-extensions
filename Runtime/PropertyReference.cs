@@ -47,6 +47,12 @@ namespace elZach.Common
         public void ApplyToSource() => TargetSourceValue = Value;
         public void GetFromSource() => Value = TargetSourceValue;
 
+        public void ApplyTo(GameObject target, T targetValue)
+        {
+            var targetComponent = target.GetComponent(component.GetType());
+            propertyInfo.SetValue(targetComponent, targetValue);
+        }
+
         public T TargetSourceValue
         {
             get => propertyInfo == null ? default : (T) propertyInfo.GetValue(component);
