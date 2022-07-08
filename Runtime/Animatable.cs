@@ -49,15 +49,14 @@ namespace elZach.Common
             public List<AnimatableHelpers.FloatReference> floatData = new List<AnimatableHelpers.FloatReference>();
             public Events events;
 
-            public void Evaluate(float progress, Transform transform, Vector3 startPos, Vector3 targetPos, Quaternion startRot, Quaternion targetRot, Vector3 startScale, Vector3 targetScale, params (object start, object target)[] customStartTarget)
+            public void Evaluate(float progress, Transform transform, 
+                Vector3 startPos, Vector3 targetPos, 
+                Quaternion startRot, Quaternion targetRot, 
+                Vector3 startScale, Vector3 targetScale, 
+                params (object start, object target)[] customStartTarget)
             {
                 float value = curve.Evaluate(progress);
-                if (animate.HasFlag(TransformOptions.position))
-                    transform.localPosition = Vector3.LerpUnclamped(startPos, targetPos, value);
-                if (animate.HasFlag(TransformOptions.rotation))
-                    transform.localRotation = Quaternion.LerpUnclamped(startRot, targetRot, value);
-                if (animate.HasFlag(TransformOptions.scale))
-                    transform.localScale = Vector3.LerpUnclamped(startScale, targetScale, value);
+                EvaluateTransform(value, transform, startPos, targetPos, startRot, targetRot, startScale, targetScale);
                 int customOffset = 0;
                 if(animate.HasFlag(TransformOptions.color))
                     for (var i = 0; i < colorData.Count; i++)
@@ -73,6 +72,42 @@ namespace elZach.Common
                         var custom = floatData[i - customOffset];
                         custom.TargetSourceValue = (float) AnimatableHelpers.Lerp(customStartTarget[i].start, customStartTarget[i].target, value);
                     }
+            }
+
+            public void EvaluateOn(float progress, GameObject target, 
+                Vector3 startPos, Vector3 targetPos,
+                Quaternion startRot, Quaternion targetRot, 
+                Vector3 startScale, Vector3 targetScale,
+                params (object start, object target)[] customStartTarget)
+            {
+                float value = curve.Evaluate(progress);
+                EvaluateTransform(value, target.transform, startPos, targetPos, startRot, targetRot, startScale, targetScale);
+                int customOffset = 0;
+                if(animate.HasFlag(TransformOptions.color))
+                    for (var i = 0; i < colorData.Count; i++)
+                    {
+                        var custom = colorData[i];
+                        custom.ApplyTo(target, (Color) AnimatableHelpers.Lerp(customStartTarget[i].start, customStartTarget[i].target, value));
+                    }
+
+                customOffset += colorData.Count;
+                if(animate.HasFlag(TransformOptions.single))
+                    for (var i = customOffset; i < floatData.Count + customOffset; i++)
+                    {
+                        var custom = floatData[i - customOffset];
+                        custom.ApplyTo(target, (float) AnimatableHelpers.Lerp(customStartTarget[i].start, customStartTarget[i].target, value));
+                    }
+            }
+
+            private void EvaluateTransform(float value, Transform transform, Vector3 startPos, Vector3 targetPos,
+                Quaternion startRot, Quaternion targetRot, Vector3 startScale, Vector3 targetScale)
+            {
+                if (animate.HasFlag(TransformOptions.position))
+                    transform.localPosition = Vector3.LerpUnclamped(startPos, targetPos, value);
+                if (animate.HasFlag(TransformOptions.rotation))
+                    transform.localRotation = Quaternion.LerpUnclamped(startRot, targetRot, value);
+                if (animate.HasFlag(TransformOptions.scale))
+                    transform.localScale = Vector3.LerpUnclamped(startScale, targetScale, value);
             }
         }
         
