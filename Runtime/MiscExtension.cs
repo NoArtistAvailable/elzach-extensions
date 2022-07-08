@@ -188,5 +188,14 @@ namespace elZach.Common
             if (!scaler) scaler = canvas.GetComponentInParent<CanvasScaler>();
             return screenPosition - new Vector2(Screen.width, Screen.height) * 0.5f;
         }
+
+        public static IEnumerable<Transform> GetChildren(this Transform transform, bool includeInactive = false)
+        {
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                var child = transform.GetChild(i);
+                if (includeInactive || child.gameObject.activeSelf) yield return child;
+            }
+        }
     }
 }
