@@ -15,6 +15,7 @@ namespace elZach.Common
 #pragma warning disable CS4014
         public bool animateAtOnEnable = true;
         public int animateAtOnEnableTo = 1;
+        public event Action<Transform, int> childStartedTransition, childEndedTransition;
 
         private Dictionary<Transform, Matrix4x4> _initialMatrices = new Dictionary<Transform, Matrix4x4>();
 
@@ -47,10 +48,13 @@ namespace elZach.Common
             public float GetDurationMultiplier(int index, int count) => Map(index, count, durationMultiplier) ?? 1f;
         }
         
+        public enum ParentActivator {None, OnBeginTransition, OnReachedState}
+        
         [Serializable]
         public class DrivenClip : Animatable.Clip
         {
-            public DriverData driver;
+            public DriverData driver = new DriverData(){delay = Vector2.one * .1f, durationMultiplier = Vector2.one};
+            public ParentActivator parentActivator;
         }
 
         public List<DrivenClip> clips = new List<DrivenClip>()
@@ -77,10 +81,36 @@ namespace elZach.Common
 
         void Awake()
         {
-            foreach(var child in transform.GetChildren()) 
+            foreach (var child in transform.GetChildren())
                 _initialMatrices.Add(child, child.parent.worldToLocalMatrix * child.localToWorldMatrix);
+
+            var parentAnimatableChildren = transform.parent?.GetComponentInParent<AnimatableChildren>();
+            if (!parentAnimatableChildren) return;
+            // Debug.Log($"I'm parent = {parentAnimatableChildren == this}");
+            for (var i = 0; i < clips.Count; i++)
+            {
+                var clip = clips[i];
+                int scopedIndex = i;
+                switch (clip.parentActivator)
+                {
+                    case ParentActivator.OnBeginTransition:
+                        parentAnimatableChildren.childStartedTransition += (target, index) =>
+                        {
+                            // Debug.Log($"started transition on {target.name} - I'm {transform.name} | we're going to {index} - I'm {scopedIndex}");
+                            if (target == transform && index == scopedIndex) PlayAt(index);
+                        };
+                        break;
+                    case ParentActivator.OnReachedState:
+                        parentAnimatableChildren.childEndedTransition += (target, index) =>
+                        {
+                            // Debug.Log($"reached state on {target.name} - I'm {transform.name} | reached {index} - I'm {scopedIndex}");
+                            if (target == transform && index == scopedIndex) PlayAt(index);
+                        };
+                        break;
+                }
+            }
         }
-        
+
         void OnEnable()
         {
             if (animateAtOnEnable)
@@ -161,7 +191,7 @@ namespace elZach.Common
         
         IEnumerator TransitionTo(DrivenClip clip)
         {
-            //currentClip = clip;
+            int clipIndex = clips.IndexOf(clip);
             var children = transform.GetChildren().ToArray();
             
             Vector3[] startPos = children.Select(x=>x.localPosition).ToArray();
@@ -184,18 +214,34 @@ namespace elZach.Common
             float timePassed = 0f;
             float endTime = Time.time + clip.time * clip.driver.durationMultiplier.y + (children.Length - 1) * clip.driver.delay.x;
             clip.events.OnStarted.Invoke();
+            Dictionary<int, bool> childTransitionFinished = new Dictionary<int, bool>();
             while (Time.time < endTime)
             {
                 timePassed = Time.time - startTime;
                 for (int i = 0; i < children.Length; i++)
                 {
                     float progress = Mathf.Clamp01((timePassed - clip.driver.GetDelay(i,children.Length)) / (clip.time * clip.driver.GetDurationMultiplier(i, children.Length)));
+                    if (progress == 0f) continue;
+                    if (!childTransitionFinished.ContainsKey(i))
+                    {
+                        childTransitionFinished.Add(i, false);
+                        childStartedTransition?.Invoke(children[i], clipIndex);
+                    } else if (childTransitionFinished[i]) continue;
                     clip.EvaluateOn(progress, children[i].gameObject, startPos[i], targetPos[i], startRot[i], targetRot[i], startScale[i], targetScale[i], customs);
+                    if (progress >= 1f)
+                    {
+                        childTransitionFinished[i] = true;
+                        childEndedTransition?.Invoke(children[i], clipIndex);
+                    }
                 }
                 yield return null;
             }
-            for(int i=0; i < children.Length; i++)
+
+            for (int i = 0; i < children.Length; i++)
+            {
                 clip.EvaluateOn(1f, children[i].gameObject, startPos[i], targetPos[i], startRot[i], targetRot[i], startScale[i], targetScale[i], customs);
+                if(!childTransitionFinished.ContainsKey(i) || !childTransitionFinished[i]) childEndedTransition?.Invoke(children[i], clipIndex);
+            }
 
             clip.events.OnEnded.Invoke();
             currentTransition = null;
@@ -207,7 +253,7 @@ namespace elZach.Common
         public Component[] GetValidComponents() => transform.GetChild(0).GetComponents<Component>();
         
         #if UNITY_EDITOR
-        [CustomEditor(typeof(AnimatableChildren))]
+        [CustomEditor(typeof(AnimatableChildren)),CanEditMultipleObjects]
         public class Inspector : Editor
         {
             public override void OnInspectorGUI()

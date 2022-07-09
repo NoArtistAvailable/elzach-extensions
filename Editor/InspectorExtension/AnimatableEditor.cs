@@ -197,13 +197,19 @@ namespace elZach.Common
 	{
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
 		{
-			return base.GetPropertyHeight(property, label) + EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(AnimatableChildren.DrivenClip.driver)));
+			return base.GetPropertyHeight(property, label) 
+			       + EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(AnimatableChildren.DrivenClip.driver)))
+			       + EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(AnimatableChildren.DrivenClip.parentActivator)));
 		}
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
+			position.height = EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(AnimatableChildren.DrivenClip.driver)));
 			EditorGUI.PropertyField(position, property.FindPropertyRelative(nameof(AnimatableChildren.DrivenClip.driver)), true);
-			position.y += EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(AnimatableChildren.DrivenClip.driver)));//base.GetPropertyHeight(property, label);
+			position.y += position.height + EditorGUIUtility.standardVerticalSpacing;//base.GetPropertyHeight(property, label);
+			position.height = EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(AnimatableChildren.DrivenClip.parentActivator)));
+			EditorGUI.PropertyField(position, property.FindPropertyRelative(nameof(AnimatableChildren.DrivenClip.parentActivator)));
+			position.y += position.height + EditorGUIUtility.standardVerticalSpacing;
 			base.OnGUI(position, property, label);
 			
 			// property.serializedObject.ApplyModifiedProperties();
