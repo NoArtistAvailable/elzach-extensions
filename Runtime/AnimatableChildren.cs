@@ -16,8 +16,13 @@ namespace elZach.Common
         public bool animateAtOnEnable = true;
         public int animateAtOnEnableTo = 1;
 
-        // public float indexDelay = 0.1f;
-        // public Vector2 indexTimeMultiplier = Vector2.one;
+        private Dictionary<Transform, Matrix4x4> _initialMatrices = new Dictionary<Transform, Matrix4x4>();
+
+        Matrix4x4 GetInitial(Transform child)
+        {
+            if(!_initialMatrices.ContainsKey(child)) _initialMatrices.Add(child, child.parent.worldToLocalMatrix * child.localToWorldMatrix);
+            return _initialMatrices[child];
+        }
 
         [Serializable]
         public class DriverData
@@ -70,6 +75,12 @@ namespace elZach.Common
         private Coroutine currentTransition;
         private event Action chainAtEndOfCurrent;
 
+        void Awake()
+        {
+            foreach(var child in transform.GetChildren()) 
+                _initialMatrices.Add(child, child.parent.worldToLocalMatrix * child.localToWorldMatrix);
+        }
+        
         void OnEnable()
         {
             if (animateAtOnEnable)
@@ -119,11 +130,11 @@ namespace elZach.Common
             {
                 var child = transform.GetChild(index);
                 if (state.animate.HasFlag(Animatable.TransformOptions.position))
-                    child.localPosition = state.data.localPos;
+                    child.localPosition = state.useInitialMatrix ? GetInitial(child).MultiplyPoint(state.data.localPos) : state.data.localPos;
                 if (state.animate.HasFlag(Animatable.TransformOptions.rotation))
-                    child.localEulerAngles = state.data.localRotation;
+                    child.localRotation = state.useInitialMatrix ? Quaternion.Euler(state.data.localRotation) * GetInitial(child).rotation : Quaternion.Euler(state.data.localRotation);
                 if (state.animate.HasFlag(Animatable.TransformOptions.scale))
-                    child.localScale = state.data.localScale;
+                    child.localScale = state.useInitialMatrix ? GetInitial(child).MultiplyVector(state.data.localScale) : state.data.localScale;
                 if (state.animate.HasFlag(Animatable.TransformOptions.color))
                     foreach (var color in state.colorData)
                         color.ApplyTo(child.gameObject, color.Value);
@@ -154,14 +165,14 @@ namespace elZach.Common
             var children = transform.GetChildren().ToArray();
             
             Vector3[] startPos = children.Select(x=>x.localPosition).ToArray();
-            Vector3 targetPos = clip.data.localPos;
-            if (clip.useInitialMatrix) targetPos = Quaternion.Inverse(transform.rotation) * clip.data.localPos;
+            Vector3[] targetPos = children.Select(x=> clip.useInitialMatrix ? GetInitial(x).MultiplyPoint3x4(clip.data.localPos) : clip.data.localPos).ToArray();
 
             Quaternion[] startRot = children.Select(x => x.localRotation).ToArray();
-            Quaternion targetRot = Quaternion.Euler(clip.data.localRotation);
+            Quaternion tRot = Quaternion.Euler(clip.data.localRotation);
+            Quaternion[] targetRot = children.Select(x=> clip.useInitialMatrix ? tRot * GetInitial(x).rotation : tRot).ToArray();
 
             Vector3[] startScale = children.Select(x => x.localScale).ToArray();
-            Vector3 targetScale = clip.data.localScale;
+            Vector3[] targetScale = children.Select(x=> clip.useInitialMatrix ? GetInitial(x).MultiplyVector(clip.data.localScale) : clip.data.localScale).ToArray();
             
             var customs = clip.colorData
                 .Select<AnimatableHelpers.ColorReference, (object start, object target)>(x => (x.TargetSourceValue, x.Value))
@@ -179,12 +190,12 @@ namespace elZach.Common
                 for (int i = 0; i < children.Length; i++)
                 {
                     float progress = Mathf.Clamp01((timePassed - clip.driver.GetDelay(i,children.Length)) / (clip.time * clip.driver.GetDurationMultiplier(i, children.Length)));
-                    clip.EvaluateOn(progress, children[i].gameObject, startPos[i], targetPos, startRot[i], targetRot, startScale[i], targetScale, customs);
+                    clip.EvaluateOn(progress, children[i].gameObject, startPos[i], targetPos[i], startRot[i], targetRot[i], startScale[i], targetScale[i], customs);
                 }
                 yield return null;
             }
             for(int i=0; i < children.Length; i++)
-                clip.EvaluateOn(1f, children[i].gameObject, startPos[i], targetPos, startRot[i], targetRot, startScale[i], targetScale, customs);
+                clip.EvaluateOn(1f, children[i].gameObject, startPos[i], targetPos[i], startRot[i], targetRot[i], startScale[i], targetScale[i], customs);
 
             clip.events.OnEnded.Invoke();
             currentTransition = null;
