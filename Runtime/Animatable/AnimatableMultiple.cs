@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace elZach.Common
 {
-    public class AnimatableChildren : MonoBehaviour
+    public abstract class AnimatableMultiple : MonoBehaviour
     {
 #pragma warning disable CS4014
         public bool animateAtOnEnable = true;
@@ -19,9 +19,11 @@ namespace elZach.Common
 
         private Dictionary<Transform, Matrix4x4> _initialMatrices = new Dictionary<Transform, Matrix4x4>();
 
+        public abstract IEnumerable<Transform> Targets { get; }
+
         Matrix4x4 GetInitial(Transform child)
         {
-            if(!_initialMatrices.ContainsKey(child)) _initialMatrices.Add(child, child.parent.worldToLocalMatrix * child.localToWorldMatrix);
+            if (!_initialMatrices.ContainsKey(child)) _initialMatrices.Add(child, (child.parent ? child.parent.worldToLocalMatrix : Matrix4x4.identity) * child.localToWorldMatrix);
             return _initialMatrices[child];
         }
 
@@ -81,8 +83,8 @@ namespace elZach.Common
 
         void Awake()
         {
-            foreach (var child in transform.GetChildren())
-                _initialMatrices.Add(child, child.parent.worldToLocalMatrix * child.localToWorldMatrix);
+            foreach (var child in Targets)
+                _initialMatrices.Add(child, (child.parent ? child.parent.worldToLocalMatrix : Matrix4x4.identity) * child.localToWorldMatrix);
 
             var parentAnimatableChildren = transform.parent?.GetComponentInParent<AnimatableChildren>();
             if (!parentAnimatableChildren) return;
@@ -143,9 +145,10 @@ namespace elZach.Common
                 currentTransition = null;
             }
 
-            for (var index = 0; index < transform.childCount; index++)
+            var children = Targets.ToList();
+            for (var index = 0; index < children.Count; index++)
             {
-                var child = transform.GetChild(index);
+                var child = children[index];
                 if (state.animate.HasFlag(Animatable.TransformOptions.position))
                     child.localPosition = state.useInitialMatrix ? GetInitial(child).MultiplyPoint(state.data.localPos) : state.data.localPos;
                 if (state.animate.HasFlag(Animatable.TransformOptions.rotation))
@@ -179,7 +182,7 @@ namespace elZach.Common
         IEnumerator TransitionTo(DrivenClip clip)
         {
             int clipIndex = clips.IndexOf(clip);
-            var children = transform.GetChildren().ToArray();
+            var children = Targets.ToArray();
             
             Vector3[] startPos = children.Select(x=>x.localPosition).ToArray();
             Vector3[] targetPos = children.Select(x=> clip.useInitialMatrix ? GetInitial(x).MultiplyPoint3x4(clip.data.localPos) : clip.data.localPos).ToArray();
@@ -238,16 +241,16 @@ namespace elZach.Common
             chainAtEndOfCurrent = null;
         }
         
-        public Component[] GetValidComponents() => transform.GetChild(0).GetComponents<Component>();
+        public virtual Component[] GetValidComponents() => Targets.First().GetComponents<Component>();
         
         #if UNITY_EDITOR
-        [CustomEditor(typeof(AnimatableChildren)),CanEditMultipleObjects]
+        [CustomEditor(typeof(AnimatableMultiple), true), CanEditMultipleObjects]
         public class Inspector : Editor
         {
             public override void OnInspectorGUI()
             {
                 DrawDefaultInspector();
-                var t = target as AnimatableChildren;
+                var t = target as AnimatableMultiple;
                 EditorGUI.BeginDisabledGroup(!Application.isPlaying);
                 EditorGUILayout.BeginHorizontal();
                 for (int i = 0; i < t.clips.Count; i++)
