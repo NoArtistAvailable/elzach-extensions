@@ -191,5 +191,22 @@ namespace elZach.Common
 			EditorGUI.EndProperty();
 		}
 	}
-	
+
+	[CustomPropertyDrawer(typeof(AnimatableChildren.DrivenClip))]
+	public class DrivenClipDrawer : AnimatableClipDrawer
+	{
+		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+		{
+			return base.GetPropertyHeight(property, label) + EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(AnimatableChildren.DrivenClip.driver)));
+		}
+
+		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+		{
+			EditorGUI.PropertyField(position, property.FindPropertyRelative(nameof(AnimatableChildren.DrivenClip.driver)), true);
+			position.y += EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(AnimatableChildren.DrivenClip.driver)));//base.GetPropertyHeight(property, label);
+			base.OnGUI(position, property, label);
+			
+			// property.serializedObject.ApplyModifiedProperties();
+		}
+	}
 }

@@ -16,19 +16,48 @@ namespace elZach.Common
         public bool animateAtOnEnable = true;
         public int animateAtOnEnableTo = 1;
 
-        public float indexDelay = 0.1f;
-        public Vector2 indexTimeMultiplier = Vector2.one;
+        // public float indexDelay = 0.1f;
+        // public Vector2 indexTimeMultiplier = Vector2.one;
 
-        public List<Animatable.Clip> clips = new List<Animatable.Clip>()
+        [Serializable]
+        public class DriverData
         {
-            new Animatable.Clip()
+            public enum Key{None, Index, InverseIndex}
+            public Key key;
+            public Vector2 delay;
+            public Vector2 durationMultiplier;
+
+            private float? Map(int index, int count, Vector2 range)
+            {
+                return key switch
+                {
+                    Key.None => null,
+                    Key.Index => (index / (float) count).Remap(0f, 1f, range.x, range.y),
+                    Key.InverseIndex => (1f - index / (float) count).Remap(0f, 1f, range.x, range.y),
+                    _ => null
+                };
+            }
+
+            public float GetDelay(int index, int count) => Map(index, count, delay) * (key == Key.Index ? index : 1f) * (key == Key.InverseIndex ? (count - index) : 1f) ?? 0f;
+            public float GetDurationMultiplier(int index, int count) => Map(index, count, durationMultiplier) ?? 1f;
+        }
+        
+        [Serializable]
+        public class DrivenClip : Animatable.Clip
+        {
+            public DriverData driver;
+        }
+
+        public List<DrivenClip> clips = new List<DrivenClip>()
+        {
+            new DrivenClip()
             {
                 curve = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(1f, 1f)),
                 time = 0.25f,
                 data = new Animatable.TransformData() { localScale = Vector3.zero },
                 animate = Animatable.TransformOptions.scale
             },
-            new Animatable.Clip()
+            new DrivenClip()
             {
                 curve = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(0.75f, 1.2f), new Keyframe(1f, 1f)),
                 time = 0.35f,
@@ -104,9 +133,10 @@ namespace elZach.Common
             }
         }
 
-        public async Task Play(Animatable.Clip clip)
+        public async Task Play(DrivenClip clip)
         {
             // if(currentTransition!=null) Debug.Log($"Playing Clip even though one is already Playing");
+            
             if (currentTransition != null)
             {
                 if (clip.curve.GetLastKey().value == 0f) //if we're going into a bouncing animation we need to make sure that we don't have skewed values to start with
@@ -118,14 +148,14 @@ namespace elZach.Common
             while (currentTransition != null) await Task.Yield();
         }
         
-        IEnumerator TransitionTo(Animatable.Clip clip)
+        IEnumerator TransitionTo(DrivenClip clip)
         {
             //currentClip = clip;
             var children = transform.GetChildren().ToArray();
             
             Vector3[] startPos = children.Select(x=>x.localPosition).ToArray();
             Vector3 targetPos = clip.data.localPos;
-            if (clip.world) targetPos = Quaternion.Inverse(transform.rotation) * clip.data.localPos;
+            if (clip.useInitialMatrix) targetPos = Quaternion.Inverse(transform.rotation) * clip.data.localPos;
 
             Quaternion[] startRot = children.Select(x => x.localRotation).ToArray();
             Quaternion targetRot = Quaternion.Euler(clip.data.localRotation);
@@ -141,14 +171,14 @@ namespace elZach.Common
             // float progress = 0f;
             float startTime = Time.time;
             float timePassed = 0f;
-            float endTime = Time.time + clip.time * indexTimeMultiplier.y + (children.Length - 1) * indexDelay;
+            float endTime = Time.time + clip.time * clip.driver.durationMultiplier.y + (children.Length - 1) * clip.driver.delay.x;
             clip.events.OnStarted.Invoke();
             while (Time.time < endTime)
             {
                 timePassed = Time.time - startTime;
                 for (int i = 0; i < children.Length; i++)
                 {
-                    float progress = Mathf.Clamp01((timePassed - i * indexDelay) / (clip.time * Mathf.Lerp(indexTimeMultiplier.x, indexTimeMultiplier.y, i / (float) children.Length)));
+                    float progress = Mathf.Clamp01((timePassed - clip.driver.GetDelay(i,children.Length)) / (clip.time * clip.driver.GetDurationMultiplier(i, children.Length)));
                     clip.EvaluateOn(progress, children[i].gameObject, startPos[i], targetPos, startRot[i], targetRot, startScale[i], targetScale, customs);
                 }
                 yield return null;
