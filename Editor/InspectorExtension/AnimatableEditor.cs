@@ -8,7 +8,7 @@ using elZach.Access;
 
 namespace elZach.Common
 {
-	[CustomEditor(typeof(Animatable))]
+	[CustomEditor(typeof(Animatable)), CanEditMultipleObjects]
 	public class AnimatableEditor : Editor
 	{
 		public override void OnInspectorGUI()
@@ -101,15 +101,15 @@ namespace elZach.Common
 					EditorGUI.Toggle(rect, clip.loop);
 				rect.x += rect.width + 3;
 				rect.width = position.width / 4f - 6;
-				EditorGUI.LabelField(rect, "loop");
+				EditorGUI.LabelField(rect, "Loop");
 				rect.x += rect.width + 3;
 				rect.width = 22;
-				property.FindPropertyRelative(nameof(Animatable.Clip.world)).boolValue =
-					EditorGUI.Toggle(rect, clip.world);
+				property.FindPropertyRelative(nameof(Animatable.Clip.useInitialMatrix)).boolValue =
+					EditorGUI.Toggle(rect, clip.useInitialMatrix);
 	
 				rect.x += rect.width + 3;
 				rect.width = position.width / 4f - 6;
-				EditorGUI.LabelField(rect, "world");
+				EditorGUI.LabelField(rect, "Initial Matrix");
 	
 				rect.y += rect.height + 8;
 				rect.width = position.width;
@@ -162,7 +162,7 @@ namespace elZach.Common
 	
 				var eventsProperty = property.FindPropertyRelative(nameof(clip.events));
 				// rect.height = EditorGUI.GetPropertyHeight(eventsProperty);
-				rect.height += 8;
+				rect.height = EditorGUIUtility.singleLineHeight + 8;
 				//EditorGUI.PropertyField(rect, eventsProperty);
 				string eventsLabel = "Events";
 				int onStartedEventCount = clip.events.OnStarted.GetPersistentEventCount();

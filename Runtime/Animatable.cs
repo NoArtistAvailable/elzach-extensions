@@ -38,7 +38,7 @@ namespace elZach.Common
                 public UnityEvent OnStarted, OnEnded;
             }
 
-            public bool world = false;
+            public bool useInitialMatrix = false;
             public bool loop = false;
             public AnimationCurve curve = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(1f, 1f));
             public float time = 0.25f;
@@ -113,6 +113,7 @@ namespace elZach.Common
         
         public bool animateAtOnEnable = true;
         public int animateAtOnEnableTo = 1;
+        private Matrix4x4 initialMatrix;
 
         public List<Clip> clips = new List<Clip>()
         {
@@ -133,6 +134,11 @@ namespace elZach.Common
         };
 
         private Coroutine currentTransition;
+
+        void Awake()
+        {
+            initialMatrix = (transform.parent ? transform.parent.worldToLocalMatrix : Matrix4x4.identity) * transform.localToWorldMatrix;
+        }
 
         void OnEnable()
         {
@@ -180,9 +186,9 @@ namespace elZach.Common
                 StopCoroutine(currentTransition);
                 currentTransition = null;
             }
-            if (state.animate.HasFlag(TransformOptions.position)) transform.localPosition = state.data.localPos;
-            if (state.animate.HasFlag(TransformOptions.rotation)) transform.localEulerAngles = state.data.localRotation;
-            if (state.animate.HasFlag(TransformOptions.scale)) transform.localScale = state.data.localScale;
+            if (state.animate.HasFlag(TransformOptions.position)) transform.localPosition = state.useInitialMatrix ? initialMatrix.MultiplyPoint3x4(state.data.localPos) : state.data.localPos;
+            if (state.animate.HasFlag(TransformOptions.rotation)) transform.localRotation = state.useInitialMatrix ? Quaternion.Euler(state.data.localRotation) * initialMatrix.rotation : Quaternion.Euler(state.data.localRotation);
+            if (state.animate.HasFlag(TransformOptions.scale)) transform.localScale = state.useInitialMatrix ? initialMatrix.MultiplyVector(state.data.localScale) : state.data.localScale;
             if (state.animate.HasFlag(TransformOptions.color)) foreach(var color in state.colorData) color.ApplyToSource();
             if (state.animate.HasFlag(TransformOptions.single)) foreach(var single in state.floatData) single.ApplyToSource();
         }
@@ -206,13 +212,15 @@ namespace elZach.Common
             //currentClip = clip;
             Vector3 startPos = transform.localPosition;
             Vector3 targetPos = clip.data.localPos;
-            if (clip.world) targetPos = Quaternion.Inverse(transform.rotation) * clip.data.localPos;
+            if (clip.useInitialMatrix) targetPos = initialMatrix.MultiplyPoint3x4(clip.data.localPos);
 
             Quaternion startRot = transform.localRotation;
             Quaternion targetRot = Quaternion.Euler(clip.data.localRotation);
+            if (clip.useInitialMatrix) targetRot = targetRot * initialMatrix.rotation;
 
             Vector3 startScale = transform.localScale;
             Vector3 targetScale = clip.data.localScale;
+            if (clip.useInitialMatrix) targetScale = initialMatrix.MultiplyVector(targetScale);
             
             var customs = clip.colorData
                 .Select<AnimatableHelpers.ColorReference, (object start, object target)>(x => (x.TargetSourceValue, x.Value))
