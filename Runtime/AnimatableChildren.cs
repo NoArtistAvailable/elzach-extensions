@@ -199,10 +199,10 @@ namespace elZach.Common
             // float progress = 0f;
             float startTime = Time.time;
             float timePassed = 0f;
-            float endTime = Time.time + clip.time * clip.driver.durationMultiplier.y + (children.Length - 1) * clip.driver.delay.x;
+            int haveToFinish = children.Length;
             clip.events.OnStarted.Invoke();
             Dictionary<int, bool> childTransitionFinished = new Dictionary<int, bool>();
-            while (Time.time < endTime)
+            while (haveToFinish>0)
             {
                 timePassed = Time.time - startTime;
                 for (int i = 0; i < children.Length; i++)
@@ -218,6 +218,7 @@ namespace elZach.Common
                     if (progress >= 1f)
                     {
                         childTransitionFinished[i] = true;
+                        haveToFinish--;
                         childEndedTransition?.Invoke(children[i], clipIndex);
                     }
                 }
