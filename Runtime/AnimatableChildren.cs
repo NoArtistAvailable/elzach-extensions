@@ -86,29 +86,16 @@ namespace elZach.Common
 
             var parentAnimatableChildren = transform.parent?.GetComponentInParent<AnimatableChildren>();
             if (!parentAnimatableChildren) return;
-            // Debug.Log($"I'm parent = {parentAnimatableChildren == this}");
-            for (var i = 0; i < clips.Count; i++)
+            parentAnimatableChildren.childStartedTransition += (target, index) =>
             {
-                var clip = clips[i];
-                int scopedIndex = i;
-                switch (clip.parentActivator)
-                {
-                    case ParentActivator.OnBeginTransition:
-                        parentAnimatableChildren.childStartedTransition += (target, index) =>
-                        {
-                            // Debug.Log($"started transition on {target.name} - I'm {transform.name} | we're going to {index} - I'm {scopedIndex}");
-                            if (target == transform && index == scopedIndex) PlayAt(index);
-                        };
-                        break;
-                    case ParentActivator.OnReachedState:
-                        parentAnimatableChildren.childEndedTransition += (target, index) =>
-                        {
-                            // Debug.Log($"reached state on {target.name} - I'm {transform.name} | reached {index} - I'm {scopedIndex}");
-                            if (target == transform && index == scopedIndex) PlayAt(index);
-                        };
-                        break;
-                }
-            }
+                if (target != transform || clips.Count <= index) return;
+                if (clips[index].parentActivator == ParentActivator.OnBeginTransition) PlayAt(index);
+            };
+            parentAnimatableChildren.childEndedTransition += (target, index) =>
+            {
+                if (target != transform || clips.Count <= index) return;
+                if (clips[index].parentActivator == ParentActivator.OnReachedState) PlayAt(index);
+            };
         }
 
         void OnEnable()
