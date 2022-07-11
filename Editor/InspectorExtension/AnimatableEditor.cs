@@ -8,7 +8,7 @@ using elZach.Access;
 
 namespace elZach.Common
 {
-	[CustomEditor(typeof(Animatable)), CanEditMultipleObjects]
+	[CustomEditor(typeof(Animatable))]//, CanEditMultipleObjects]
 	public class AnimatableEditor : Editor
 	{
 		public override void OnInspectorGUI()

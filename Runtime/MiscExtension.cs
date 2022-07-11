@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 namespace elZach.Common
@@ -100,6 +101,15 @@ namespace elZach.Common
                 propertyNames[i] = shader.GetPropertyName(i);
             }
             return propertyNames;
+        }
+
+        public static IEnumerable<string> GetPropertyNames(this Shader shader, ShaderPropertyType propertyType)
+        {
+            for (int i = 0; i < shader.GetPropertyCount(); i++)
+            {
+                if(shader.GetPropertyType(i) == propertyType)
+                    yield return shader.GetPropertyName(i);
+            }
         }
         
         public static TSource MinBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> selector)

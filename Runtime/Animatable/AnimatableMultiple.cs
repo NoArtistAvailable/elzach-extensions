@@ -23,8 +23,10 @@ namespace elZach.Common
 
         Matrix4x4 GetInitial(Transform child)
         {
-            if (!_initialMatrices.ContainsKey(child)) _initialMatrices.Add(child, (child.parent ? child.parent.worldToLocalMatrix : Matrix4x4.identity) * child.localToWorldMatrix);
-            return _initialMatrices[child];
+            if (_initialMatrices.TryGetValue(child, out var value)) return value;
+            value = (child.parent ? child.parent.worldToLocalMatrix : Matrix4x4.identity) * child.localToWorldMatrix;
+            _initialMatrices.Add(child, value);
+            return value;
         }
 
         [Serializable]
@@ -201,22 +203,22 @@ namespace elZach.Common
 
             // float progress = 0f;
             float startTime = Time.time;
-            float timePassed = 0f;
             int haveToFinish = children.Length;
             clip.events.OnStarted.Invoke();
             Dictionary<int, bool> childTransitionFinished = new Dictionary<int, bool>();
             while (haveToFinish>0)
             {
-                timePassed = Time.time - startTime;
+                var timePassed = Time.time - startTime;
                 for (int i = 0; i < children.Length; i++)
                 {
                     float progress = Mathf.Clamp01((timePassed - clip.driver.GetDelay(i,children.Length)) / (clip.time * clip.driver.GetDurationMultiplier(i, children.Length)));
                     if (progress == 0f) continue;
-                    if (!childTransitionFinished.ContainsKey(i))
+                    
+                    if (!childTransitionFinished.TryGetValue(i, out var finished))
                     {
                         childTransitionFinished.Add(i, false);
                         childStartedTransition?.Invoke(children[i], clipIndex);
-                    } else if (childTransitionFinished[i]) continue;
+                    } else if (finished) continue;
                     clip.EvaluateOn(progress, children[i].gameObject, startPos[i], targetPos[i], startRot[i], targetRot[i], startScale[i], targetScale[i], customs);
                     if (progress >= 1f)
                     {
@@ -231,7 +233,7 @@ namespace elZach.Common
             for (int i = 0; i < children.Length; i++)
             {
                 clip.EvaluateOn(1f, children[i].gameObject, startPos[i], targetPos[i], startRot[i], targetRot[i], startScale[i], targetScale[i], customs);
-                if(!childTransitionFinished.ContainsKey(i) || !childTransitionFinished[i]) childEndedTransition?.Invoke(children[i], clipIndex);
+                // if(!childTransitionFinished.ContainsKey(i) || !childTransitionFinished[i]) childEndedTransition?.Invoke(children[i], clipIndex);
             }
 
             clip.events.OnEnded.Invoke();
@@ -244,7 +246,7 @@ namespace elZach.Common
         public virtual Component[] GetValidComponents() => Targets.First().GetComponents<Component>();
         
         #if UNITY_EDITOR
-        [CustomEditor(typeof(AnimatableMultiple), true), CanEditMultipleObjects]
+        [CustomEditor(typeof(AnimatableMultiple), true)]//, CanEditMultipleObjects]
         public class Inspector : Editor
         {
             public override void OnInspectorGUI()

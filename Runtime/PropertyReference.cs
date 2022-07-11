@@ -30,13 +30,13 @@ namespace elZach.Common
         public T Value
         {
             get => m_value;
-            private set => m_value = value;
+            protected set => m_value = value;
         }
 
         protected PropertyInfo _propertyInfo;
         protected PropertyInfo propertyInfo => _propertyInfo ??= component?.GetType().GetRuntimeProperty(propertyPath);
 
-        protected string[] GetValidProperties()
+        protected virtual string[] GetValidProperties()
         {
             var targetType = component?.GetType();
             return targetType?.GetProperties(BindingFlags.Instance | BindingFlags.Public)
@@ -47,13 +47,18 @@ namespace elZach.Common
         public void ApplyToSource() => TargetSourceValue = Value;
         public void GetFromSource() => Value = TargetSourceValue;
 
-        public void ApplyTo(GameObject target, T targetValue)
+        public virtual void ApplyTo(GameObject target, T targetValue)
         {
+            if (target == component.gameObject)
+            {
+                TargetSourceValue = targetValue;
+                return;
+            }
             var targetComponent = target.GetComponent(component.GetType());
             propertyInfo.SetValue(targetComponent, targetValue);
         }
 
-        public T TargetSourceValue
+        public virtual T TargetSourceValue
         {
             get => propertyInfo == null ? default : (T) propertyInfo.GetValue(component);
             set => propertyInfo?.SetValue(component, value);
