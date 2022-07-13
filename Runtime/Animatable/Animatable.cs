@@ -188,7 +188,7 @@ namespace elZach.Common
             }
             if (state.animate.HasFlag(TransformOptions.position)) transform.localPosition = state.useInitialMatrix ? initialMatrix.MultiplyPoint3x4(state.data.localPos) : state.data.localPos;
             if (state.animate.HasFlag(TransformOptions.rotation)) transform.localRotation = state.useInitialMatrix ? Quaternion.Euler(state.data.localRotation) * initialMatrix.rotation : Quaternion.Euler(state.data.localRotation);
-            if (state.animate.HasFlag(TransformOptions.scale)) transform.localScale = state.useInitialMatrix ? initialMatrix.MultiplyVector(state.data.localScale) : state.data.localScale;
+            if (state.animate.HasFlag(TransformOptions.scale)) transform.localScale = state.useInitialMatrix ? initialMatrix.lossyScale.ScaleAndReturn(state.data.localScale) : state.data.localScale;
             if (state.animate.HasFlag(TransformOptions.color)) foreach(var color in state.colorData) color.ApplyToSource();
             if (state.animate.HasFlag(TransformOptions.single)) foreach(var single in state.floatData) single.ApplyToSource();
         }
@@ -220,7 +220,7 @@ namespace elZach.Common
 
             Vector3 startScale = transform.localScale;
             Vector3 targetScale = clip.data.localScale;
-            if (clip.useInitialMatrix) targetScale = initialMatrix.MultiplyVector(targetScale);
+            if (clip.useInitialMatrix) targetScale = initialMatrix.lossyScale.ScaleAndReturn(clip.data.localScale);
             
             var customs = clip.colorData
                 .Select<AnimatableHelpers.ColorReference, (object start, object target)>(x => (x.TargetSourceValue, x.Value))

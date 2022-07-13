@@ -36,6 +36,12 @@ namespace elZach.Common
             return true;
         }
 
+        public static Vector3 ScaleAndReturn(this Vector3 origin, Vector3 scaler)
+        {
+            origin.Scale(scaler);
+            return origin;
+        }
+
         public static float GetRandom(this Vector2 range) => UnityEngine.Random.Range(range.x, range.y);
         public static int GetRandom(this Vector2Int range) => UnityEngine.Random.Range(range.x, range.y);
     }

@@ -24,7 +24,9 @@ namespace elZach.Common
         Matrix4x4 GetInitial(Transform child)
         {
             if (_initialMatrices.TryGetValue(child, out var value)) return value;
-            value = (child.parent ? child.parent.worldToLocalMatrix : Matrix4x4.identity) * child.localToWorldMatrix;
+            var parent = child.parent;
+            value = child.localToWorldMatrix * (parent ? parent.worldToLocalMatrix : Matrix4x4.identity);
+            // Debug.LogWarning($"{child.name} : {value.lossyScale.x.ToString("#.####")}|{value.lossyScale.y.ToString("#.####")}|{value.lossyScale.z.ToString("#.####")}");
             _initialMatrices.Add(child, value);
             return value;
         }
@@ -85,8 +87,8 @@ namespace elZach.Common
 
         void Awake()
         {
-            foreach (var child in Targets)
-                _initialMatrices.Add(child, (child.parent ? child.parent.worldToLocalMatrix : Matrix4x4.identity) * child.localToWorldMatrix);
+            // foreach (var child in Targets)
+            //     _initialMatrices.Add(child, (child.parent ? child.parent.worldToLocalMatrix : Matrix4x4.identity) * child.localToWorldMatrix);
 
             var parentAnimatableChildren = transform.parent?.GetComponentInParent<AnimatableChildren>();
             if (!parentAnimatableChildren) return;
@@ -156,7 +158,7 @@ namespace elZach.Common
                 if (state.animate.HasFlag(Animatable.TransformOptions.rotation))
                     child.localRotation = state.useInitialMatrix ? Quaternion.Euler(state.data.localRotation) * GetInitial(child).rotation : Quaternion.Euler(state.data.localRotation);
                 if (state.animate.HasFlag(Animatable.TransformOptions.scale))
-                    child.localScale = state.useInitialMatrix ? GetInitial(child).MultiplyVector(state.data.localScale) : state.data.localScale;
+                    child.localScale = state.useInitialMatrix ? GetInitial(child).lossyScale.ScaleAndReturn(state.data.localScale) : state.data.localScale;
                 if (state.animate.HasFlag(Animatable.TransformOptions.color))
                     foreach (var color in state.colorData)
                         color.ApplyTo(child.gameObject, color.Value);
@@ -194,7 +196,7 @@ namespace elZach.Common
             Quaternion[] targetRot = children.Select(x=> clip.useInitialMatrix ? tRot * GetInitial(x).rotation : tRot).ToArray();
 
             Vector3[] startScale = children.Select(x => x.localScale).ToArray();
-            Vector3[] targetScale = children.Select(x=> clip.useInitialMatrix ? GetInitial(x).MultiplyVector(clip.data.localScale) : clip.data.localScale).ToArray();
+            Vector3[] targetScale = children.Select(x=> clip.useInitialMatrix ? GetInitial(x).lossyScale.ScaleAndReturn(clip.data.localScale) : clip.data.localScale).ToArray();
             
             var customs = clip.colorData
                 .Select<AnimatableHelpers.ColorReference, (object start, object target)>(x => (x.TargetSourceValue, x.Value))
