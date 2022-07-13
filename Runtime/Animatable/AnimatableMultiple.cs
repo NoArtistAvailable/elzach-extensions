@@ -25,8 +25,8 @@ namespace elZach.Common
         {
             if (_initialMatrices.TryGetValue(child, out var value)) return value;
             var parent = child.parent;
-            value = child.localToWorldMatrix * (parent ? parent.worldToLocalMatrix : Matrix4x4.identity);
-            // Debug.LogWarning($"{child.name} : {value.lossyScale.x.ToString("#.####")}|{value.lossyScale.y.ToString("#.####")}|{value.lossyScale.z.ToString("#.####")}");
+            value = (parent ? parent.worldToLocalMatrix : Matrix4x4.identity) * child.localToWorldMatrix;
+            // Debug.LogWarning($"{child.name} : {value.rotation.eulerAngles}");
             _initialMatrices.Add(child, value);
             return value;
         }
@@ -193,7 +193,7 @@ namespace elZach.Common
 
             Quaternion[] startRot = children.Select(x => x.localRotation).ToArray();
             Quaternion tRot = Quaternion.Euler(clip.data.localRotation);
-            Quaternion[] targetRot = children.Select(x=> clip.useInitialMatrix ? tRot * GetInitial(x).rotation : tRot).ToArray();
+            Quaternion[] targetRot = children.Select(x=> clip.useInitialMatrix ? GetInitial(x).rotation * tRot : tRot).ToArray();
 
             Vector3[] startScale = children.Select(x => x.localScale).ToArray();
             Vector3[] targetScale = children.Select(x=> clip.useInitialMatrix ? GetInitial(x).lossyScale.ScaleAndReturn(clip.data.localScale) : clip.data.localScale).ToArray();
