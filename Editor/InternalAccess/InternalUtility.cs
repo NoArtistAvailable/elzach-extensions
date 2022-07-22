@@ -18,8 +18,8 @@ namespace elZach.Access{
     public static class InternalUtilityExtensions
     {
         public static object GetInternalStructValue(this SerializedProperty property)
-#if UNITY_2022_1_OR_NEWER && false //for now this spams serialization callbacks...
-            => property.structValue;
+#if UNITY_2021_2_OR_NEWER
+            => property.isArray ? property.GetTargetObjectOfProperty() : property.boxedValue;
 #else
             => property.GetTargetObjectOfProperty();
 #endif
@@ -85,6 +85,31 @@ namespace elZach.Access{
                 if (!enm.MoveNext()) return null;
             }
             return enm.Current;
+        }
+        
+        //https://forum.unity.com/threads/get-a-general-object-value-from-serializedproperty.327098/#post-4098484
+        public static void SetValue( this SerializedProperty property, object val )
+        {
+            object obj = property.serializedObject.targetObject;
+ 
+            List<KeyValuePair<FieldInfo, object>> list = new List<KeyValuePair<FieldInfo, object>>();
+ 
+            FieldInfo field = null;
+            foreach( var path in property.propertyPath.Split( '.' ) )
+            {
+                var type = obj.GetType();
+                field = type.GetField( path );
+                list.Add( new KeyValuePair<FieldInfo, object>( field, obj ) );
+                obj = field.GetValue( obj );
+            }
+ 
+            // Now set values of all objects, from child to parent
+            for( int i = list.Count - 1; i >= 0; --i )
+            {
+                list[i].Key.SetValue( list[i].Value, val );
+                // New 'val' object will be parent of current 'val' object
+                val = list[i].Value;
+            }
         }
         
         public static List<object> GetObjectHierarchy(this SerializedProperty prop)

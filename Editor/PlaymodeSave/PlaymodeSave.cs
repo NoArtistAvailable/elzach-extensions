@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using elZach.Access;
@@ -34,20 +35,6 @@ public class PlaymodeSave : EditorWindow
    }
 
    private static List<int> selectedIDs = new List<int>();
-
-   public static bool IsBlacklisted(SerializedProperty property)
-   {
-      var obj = property.serializedObject.targetObject;
-      switch (obj)
-      {
-         case MeshFilter:
-         // case Renderer when property.propertyPath == "m_Material":
-            return true;
-         default:
-            return false;
-      }
-   }
-
    private static void OnPlayModeChange(PlayModeStateChange obj)
    {
       if (obj == PlayModeStateChange.EnteredPlayMode)
@@ -70,61 +57,39 @@ public class PlaymodeSave : EditorWindow
             var target = EditorUtility.InstanceIDToObject(entry.id);
             if (!target)
             {
-               Debug.LogWarning("[PlaymodeSave] failed, because object ID cannot be found anymore. Playmode Save only works on objects which are present in the scene file.");
-               Debug.LogWarning($"[PlaymodeSave] lost data: {entry.componentType}/{entry.property.propertyPath} ({entry.value})");
+               Debug.LogWarning($"[{nameof(PlaymodeSave)}] failed, because object ID cannot be found anymore. Play Mode Save only works on objects which are present in the scene file.");
+               Debug.LogWarning($"[{nameof(PlaymodeSave)}] lost data: {entry.componentType}/{entry.property.propertyPath} ({(entry.property.isArray ? "List" : $"{entry.property.boxedValue}")})");
                continue;
             }
 
             var so = new SerializedObject(target);
             var prop = so.FindProperty(entry.property.propertyPath);
-            var value = entry.value;
-            switch (value)
-            {
-               case float floatValue:
-                  prop.floatValue = floatValue;
-                  break;
-               case double doubleValue:
-                  prop.doubleValue = doubleValue;
-                  break;
-               case string stringValue:
-                  prop.stringValue = stringValue;
-                  break;
-               case int intValue:
-                  prop.intValue = intValue;
-                  break;
-               case bool boolValue:
-                  prop.boolValue = boolValue;
-                  break;
-               case AnimationCurve curveValue:
-                  prop.animationCurveValue = curveValue;
-                  break;
-               case Vector2 vector2Value:
-                  prop.vector2Value = vector2Value;
-                  break;
-               case Vector2Int vector2IntValue:
-                  prop.vector2IntValue = vector2IntValue;
-                  break;
-               case Vector3 vector3Value:
-                  prop.vector3Value = vector3Value;
-                  break;
-               case Vector3Int vector3IntValue:
-                  prop.vector3IntValue = vector3IntValue;
-                  break;
-               case Vector4 vector4Value:
-                  prop.vector4Value = vector4Value;
-                  break;
-               case Quaternion quaternionValue:
-                  prop.quaternionValue = quaternionValue;
-                  break;
-               case Color colorValue:
-                  prop.colorValue = colorValue;
-                  break;
-            }
+
+            CopyFromPropertyToProperty(prop, entry.property);
 
             so.ApplyModifiedProperties();
             list.RemoveAt(i);
          }
          //savedProperties.Clear();
+         ActiveWindow.Repaint();
+      }
+   }
+
+   static void CopyFromPropertyToProperty(SerializedProperty target, SerializedProperty source)
+   {
+      if (source.isArray)
+      {
+         target.arraySize = source.arraySize;
+         for (int index = 0; index < source.arraySize; index++)
+            CopyFromPropertyToProperty(target.GetArrayElementAtIndex(index), source.GetArrayElementAtIndex(index));
+      }
+      else
+      {
+#if UNITY_2021_2_OR_NEWER
+         target.boxedValue = source.boxedValue;
+#else
+         target.SetValue(source.GetInternalStructValue());
+#endif
       }
    }
 
@@ -140,9 +105,7 @@ public class PlaymodeSave : EditorWindow
       public int gameobjectId;
       public int id;
       public Type componentType;
-      // public string propertyPath;
       public SerializedProperty property;
-      public object value;
    }
 
    private static void Save(SaveProperty saveProperty)
@@ -153,7 +116,7 @@ public class PlaymodeSave : EditorWindow
    }
    
    private Vector2 scroll = Vector2.zero;
-   
+
    private void OnGUI()
    {
       EditorGUILayout.HelpBox("During Play mode, you may right click properties you want to save.", MessageType.None);
@@ -166,50 +129,49 @@ public class PlaymodeSave : EditorWindow
             savedProperties.Clear();
             Repaint();
          }
+
          EditorGUILayout.EndHorizontal();
       }
+
       scroll = GUILayout.BeginScrollView(scroll);
       for (var i = 0; i < savedProperties.Count; i++)
       {
          var entry = savedProperties[i];
-         
+
          var type = entry.componentType;
          var obj = EditorUtility.InstanceIDToObject(entry.id);
+         
          var style = (i % 2 == 0) ? EvenStyle : OddStyle;
          if (selectedIDs.Contains(entry.gameobjectId)) style = SelectedStyle;
+         
          EditorGUILayout.BeginHorizontal(style);
          if (GUILayout.Button("X", GUILayout.Width(22)))
          {
             savedProperties.RemoveAt(i);
             Repaint();
          }
+
          EditorGUI.BeginDisabledGroup(true);
          EditorGUILayout.ObjectField(obj, type, true, GUILayout.Width(120));
          EditorGUI.EndDisabledGroup();
-         EditorGUILayout.LabelField($"Saved Value : {entry.value}");
          EditorGUILayout.EndHorizontal();
-         
-         if (entry.property != null)
+
+
+         EditorGUILayout.BeginHorizontal(style);
+         EditorGUI.BeginChangeCheck();
+         EditorGUILayout.PropertyField(entry.property);
+         var hasChanged = EditorGUI.EndChangeCheck();
+         if (hasChanged && entry.property.serializedObject != null)
          {
-            EditorGUILayout.BeginHorizontal(style);
-            EditorGUI.BeginChangeCheck();
-            EditorGUILayout.PropertyField(entry.property);
-            var hasChanged = EditorGUI.EndChangeCheck();
-            if (hasChanged && entry.property.serializedObject != null)
+            savedProperties[i] = new SaveProperty()
             {
-               savedProperties[i] = new SaveProperty()
-               {
-                  id = entry.id, componentType = entry.componentType, property = entry.property,
-                  gameobjectId = entry.gameobjectId,
-                  value = GetValueFromProperty(entry.property)
-               };
-               entry.property.serializedObject.ApplyModifiedProperties();
-            }
-            EditorGUILayout.EndHorizontal();
+               id = entry.id, componentType = entry.componentType, property = entry.property,
+               gameobjectId = entry.gameobjectId
+            };
+            entry.property.serializedObject.ApplyModifiedProperties();
          }
-         else EditorGUILayout.LabelField($"[{entry.id}] NO PROPERTY FOUND - {entry.componentType} : {entry.value}");
-         
-         
+
+         EditorGUILayout.EndHorizontal();
          EditorGUILayout.Space();
       }
 
@@ -228,22 +190,18 @@ public class PlaymodeSave : EditorWindow
          menu.AddDisabledItem(new GUIContent("Property is null or has no path"), false);
          return;
       }
-
-      if (IsBlacklisted(property))
-      {
-         menu.AddDisabledItem(new GUIContent("Property is blacklisted"), false);
-         return;
-      }
+      var prop = property.Copy();
+      
       menu.AddItem(new GUIContent("Save and Reapply"), false, () =>
       {
-         var componentType = property.serializedObject.targetObject.GetType();
+         var componentType = prop.serializedObject.targetObject.GetType();
          foreach (var component in Selection.gameObjects
             .Select(x => x.GetComponent(componentType) ))
          {
-            var individualProperty = new SerializedObject(component).FindProperty(property.propertyPath);
+            var individualProperty = new SerializedObject(component).FindProperty(prop.propertyPath);
             if (individualProperty == null)
             {
-               Debug.LogWarning($"Didn't find property at path {property.propertyPath} on {component.name}", component);
+               Debug.LogWarning($"Didn't find property at path {prop.propertyPath} on {component.name}", component);
             } 
             var id = component.GetInstanceID();
             Save(new SaveProperty()
@@ -252,7 +210,6 @@ public class PlaymodeSave : EditorWindow
                componentType = component.GetType(),
                // propertyPath = property.propertyPath,
                property = individualProperty,
-               value = GetValueFromProperty(individualProperty),
                gameobjectId = component.gameObject.GetInstanceID()
             });
          }
@@ -260,73 +217,7 @@ public class PlaymodeSave : EditorWindow
          ActiveWindow.Repaint();
       });
    }
-   static object GetValueFromProperty(SerializedProperty property)
-   {
-      if (property == null)
-      {
-         Debug.LogWarning("No Property found.");
-         return null;
-      }
-      switch (property.propertyType)
-      {
-         case SerializedPropertyType.Generic:
-            return property.GetInternalStructValue();
-         case SerializedPropertyType.Integer:
-            return property.intValue;
-         case SerializedPropertyType.Boolean:
-            return property.boolValue;
-         case SerializedPropertyType.Float:
-            return property.floatValue;
-         case SerializedPropertyType.String:
-            return property.stringValue;
-         case SerializedPropertyType.Color:
-            return property.colorValue;
-         case SerializedPropertyType.ObjectReference:
-            return property.objectReferenceValue;
-         case SerializedPropertyType.LayerMask:
-            return property.intValue;  // <-- to check
-         case SerializedPropertyType.Enum:
-            return property.enumValueIndex;  //<-- to check
-         case SerializedPropertyType.Vector2:
-            return property.vector2Value;
-         case SerializedPropertyType.Vector3:
-            return property.vector3Value;
-         case SerializedPropertyType.Vector4:
-            return property.vector4Value;
-         case SerializedPropertyType.Rect:
-            return property.rectValue;
-         case SerializedPropertyType.ArraySize:
-            return property.arraySize;
-         case SerializedPropertyType.Character:
-            return property.intValue;  //<-- to check
-         case SerializedPropertyType.AnimationCurve:
-            return property.animationCurveValue;
-         case SerializedPropertyType.Bounds:
-            return property.boundsValue;
-         case SerializedPropertyType.Gradient:
-            Debug.LogWarning("Gradient not supported currently, sorry!");
-            return null;   //<-- to check
-         case SerializedPropertyType.Quaternion:
-            return property.quaternionValue;
-         case SerializedPropertyType.ExposedReference:
-            return property.exposedReferenceValue;
-         case SerializedPropertyType.FixedBufferSize:
-            return property.fixedBufferSize;
-         case SerializedPropertyType.Vector2Int:
-            return property.vector2IntValue;
-         case SerializedPropertyType.Vector3Int:
-            return property.vector3IntValue;
-         case SerializedPropertyType.RectInt:
-            return property.rectIntValue;
-         case SerializedPropertyType.BoundsInt:
-            return property.boundsIntValue;
-         case SerializedPropertyType.ManagedReference:
-            Debug.LogWarning("Managed Reference has no getter...");
-            return null; //<-- to check
-         default:
-            throw new ArgumentOutOfRangeException();
-      }
-   }
+   
    #region guiStyles
    private static GUIStyle EvenStyle
    {
