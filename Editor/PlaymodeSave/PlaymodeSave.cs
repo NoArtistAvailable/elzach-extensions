@@ -4,7 +4,6 @@ using System.Linq;
 using elZach.Access;
 using UnityEditor;
 using UnityEngine;
-using Object = System.Object;
 
 public class PlaymodeSave : EditorWindow
 {
@@ -15,7 +14,7 @@ public class PlaymodeSave : EditorWindow
    private List<SaveProperty> _savedProperties = new List<SaveProperty>();
    
 
-   [MenuItem("Window/Tools/PlaymodeSave")]
+   [MenuItem("Window/Tools/Play mode Save #_s")]
    public static void Init()
    {
       var window = PlaymodeSave.GetWindow<PlaymodeSave>();
@@ -25,20 +24,49 @@ public class PlaymodeSave : EditorWindow
    {
       EditorApplication.contextualPropertyMenu += OnPropertyContextMenu;
       EditorApplication.playModeStateChanged += OnPlayModeChange;
+      if(Application.isPlaying) Selection.selectionChanged += OnSelectionChanged;
+   }
+
+   static void OnSelectionChanged()
+   {
+      selectedIDs = Selection.gameObjects.Select(x => x.GetInstanceID()).ToList();
+      ActiveWindow.Repaint();
+   }
+
+   private static List<int> selectedIDs = new List<int>();
+
+   public static bool IsBlacklisted(SerializedProperty property)
+   {
+      var obj = property.serializedObject.targetObject;
+      switch (obj)
+      {
+         case MeshFilter:
+         // case Renderer when property.propertyPath == "m_Material":
+            return true;
+         default:
+            return false;
+      }
    }
 
    private static void OnPlayModeChange(PlayModeStateChange obj)
    {
+      if (obj == PlayModeStateChange.EnteredPlayMode)
+      {
+         Selection.selectionChanged += OnSelectionChanged;
+      }
+      
       if (obj == PlayModeStateChange.ExitingPlayMode)
       {
-         
+         Selection.selectionChanged -= OnSelectionChanged;
+         selectedIDs.Clear();
       }
 
       if (obj == PlayModeStateChange.EnteredEditMode)
       {
          var list = savedProperties;
-         foreach (var entry in list)
+         for (var i = list.Count - 1; i >= 0; i--)
          {
+            var entry = list[i];
             var target = EditorUtility.InstanceIDToObject(entry.id);
             if (!target)
             {
@@ -46,6 +74,7 @@ public class PlaymodeSave : EditorWindow
                Debug.LogWarning($"[PlaymodeSave] lost data: {entry.componentType}/{entry.property.propertyPath} ({entry.value})");
                continue;
             }
+
             var so = new SerializedObject(target);
             var prop = so.FindProperty(entry.property.propertyPath);
             var value = entry.value;
@@ -93,8 +122,9 @@ public class PlaymodeSave : EditorWindow
             }
 
             so.ApplyModifiedProperties();
+            list.RemoveAt(i);
          }
-         savedProperties.Clear();
+         //savedProperties.Clear();
       }
    }
 
@@ -102,12 +132,12 @@ public class PlaymodeSave : EditorWindow
    {
       EditorApplication.contextualPropertyMenu -= OnPropertyContextMenu;
       EditorApplication.playModeStateChanged -= OnPlayModeChange;
+      Selection.selectionChanged -= OnSelectionChanged;
+      selectedIDs.Clear();
    }
-
-   
-
    public struct SaveProperty
    {
+      public int gameobjectId;
       public int id;
       public Type componentType;
       // public string propertyPath;
@@ -115,30 +145,72 @@ public class PlaymodeSave : EditorWindow
       public object value;
    }
 
+   private static void Save(SaveProperty saveProperty)
+   {
+      var existing = savedProperties.FindIndex(x => x.id == saveProperty.id && x.property?.propertyPath == saveProperty.property?.propertyPath);
+      if (existing >= 0) savedProperties[existing] = saveProperty;
+      else savedProperties.Add(saveProperty);
+   }
+   
    private Vector2 scroll = Vector2.zero;
+   
    private void OnGUI()
    {
+      EditorGUILayout.HelpBox("During Play mode, you may right click properties you want to save.", MessageType.None);
+      if (!Application.isPlaying && savedProperties.Count > 0)
+      {
+         EditorGUILayout.BeginHorizontal();
+         EditorGUILayout.HelpBox("Entries couldn't be saved during Play mode, you can still copy the values from the property fields.", MessageType.Warning);
+         if (GUILayout.Button("Clear", GUILayout.Width(45)))
+         {
+            savedProperties.Clear();
+            Repaint();
+         }
+         EditorGUILayout.EndHorizontal();
+      }
       scroll = GUILayout.BeginScrollView(scroll);
       for (var i = 0; i < savedProperties.Count; i++)
       {
          var entry = savedProperties[i];
-         EditorGUILayout.LabelField(
-            $"[{entry.id}] - {entry.componentType} - {entry.property.propertyPath} : {entry.value}");
+         
          var type = entry.componentType;
          var obj = EditorUtility.InstanceIDToObject(entry.id);
-         EditorGUILayout.ObjectField(obj, type, true);
-         EditorGUI.BeginChangeCheck();
-         EditorGUILayout.PropertyField(entry.property);
-         var hasChanged = EditorGUI.EndChangeCheck();
-         if (hasChanged)
+         var style = (i % 2 == 0) ? EvenStyle : OddStyle;
+         if (selectedIDs.Contains(entry.gameobjectId)) style = SelectedStyle;
+         EditorGUILayout.BeginHorizontal(style);
+         if (GUILayout.Button("X", GUILayout.Width(22)))
          {
-            savedProperties[i] = new SaveProperty()
-            {
-               id = entry.id, componentType = entry.componentType, property = entry.property,
-               value = GetValueFromProperty(entry.property)
-            };
-            entry.property.serializedObject.ApplyModifiedProperties();
+            savedProperties.RemoveAt(i);
+            Repaint();
          }
+         EditorGUI.BeginDisabledGroup(true);
+         EditorGUILayout.ObjectField(obj, type, true, GUILayout.Width(120));
+         EditorGUI.EndDisabledGroup();
+         EditorGUILayout.LabelField($"Saved Value : {entry.value}");
+         EditorGUILayout.EndHorizontal();
+         
+         if (entry.property != null)
+         {
+            EditorGUILayout.BeginHorizontal(style);
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.PropertyField(entry.property);
+            var hasChanged = EditorGUI.EndChangeCheck();
+            if (hasChanged && entry.property.serializedObject != null)
+            {
+               savedProperties[i] = new SaveProperty()
+               {
+                  id = entry.id, componentType = entry.componentType, property = entry.property,
+                  gameobjectId = entry.gameobjectId,
+                  value = GetValueFromProperty(entry.property)
+               };
+               entry.property.serializedObject.ApplyModifiedProperties();
+            }
+            EditorGUILayout.EndHorizontal();
+         }
+         else EditorGUILayout.LabelField($"[{entry.id}] NO PROPERTY FOUND - {entry.componentType} : {entry.value}");
+         
+         
+         EditorGUILayout.Space();
       }
 
       GUILayout.EndScrollView();
@@ -146,23 +218,42 @@ public class PlaymodeSave : EditorWindow
 
    static void OnPropertyContextMenu(GenericMenu menu, SerializedProperty property)
    {
+      if (!Application.isPlaying)
+      {
+         menu.AddDisabledItem(new GUIContent("Save and Reapply"), false);
+         return;
+      }
+      if (property == null || string.IsNullOrEmpty(property.propertyPath))
+      {
+         menu.AddDisabledItem(new GUIContent("Property is null or has no path"), false);
+         return;
+      }
+
+      if (IsBlacklisted(property))
+      {
+         menu.AddDisabledItem(new GUIContent("Property is blacklisted"), false);
+         return;
+      }
       menu.AddItem(new GUIContent("Save and Reapply"), false, () =>
       {
          var componentType = property.serializedObject.targetObject.GetType();
-         foreach (var component in Selection.objects
-            .Where(x => x is GameObject)
-            .Select(y => ((GameObject)y).GetComponent(componentType) ))
+         foreach (var component in Selection.gameObjects
+            .Select(x => x.GetComponent(componentType) ))
          {
-            // var component = componentObject as Component;
             var individualProperty = new SerializedObject(component).FindProperty(property.propertyPath);
+            if (individualProperty == null)
+            {
+               Debug.LogWarning($"Didn't find property at path {property.propertyPath} on {component.name}", component);
+            } 
             var id = component.GetInstanceID();
-            savedProperties.Add(new SaveProperty()
+            Save(new SaveProperty()
             {
                id = id,
                componentType = component.GetType(),
                // propertyPath = property.propertyPath,
                property = individualProperty,
-               value = GetValueFromProperty(individualProperty)
+               value = GetValueFromProperty(individualProperty),
+               gameobjectId = component.gameObject.GetInstanceID()
             });
          }
 
@@ -171,6 +262,11 @@ public class PlaymodeSave : EditorWindow
    }
    static object GetValueFromProperty(SerializedProperty property)
    {
+      if (property == null)
+      {
+         Debug.LogWarning("No Property found.");
+         return null;
+      }
       switch (property.propertyType)
       {
          case SerializedPropertyType.Generic:
@@ -208,6 +304,7 @@ public class PlaymodeSave : EditorWindow
          case SerializedPropertyType.Bounds:
             return property.boundsValue;
          case SerializedPropertyType.Gradient:
+            Debug.LogWarning("Gradient not supported currently, sorry!");
             return null;   //<-- to check
          case SerializedPropertyType.Quaternion:
             return property.quaternionValue;
@@ -224,9 +321,62 @@ public class PlaymodeSave : EditorWindow
          case SerializedPropertyType.BoundsInt:
             return property.boundsIntValue;
          case SerializedPropertyType.ManagedReference:
+            Debug.LogWarning("Managed Reference has no getter...");
             return null; //<-- to check
          default:
             throw new ArgumentOutOfRangeException();
       }
    }
+   #region guiStyles
+   private static GUIStyle EvenStyle
+   {
+      get
+      {
+         if (_evenStyle == null)
+         {
+            _evenStyle = new GUIStyle();
+            Color col = EditorGUIUtility.isProSkin ? (Color) new Color32 (56, 56, 56, 255) : (Color) new Color32 (194, 194, 194, 255);
+            _evenStyle.normal.background = new Texture2D(1, 1);
+            _evenStyle.normal.background.SetPixel(0, 0, col);
+            _evenStyle.normal.background.Apply();
+         }
+         return _evenStyle;
+      }
+   }
+   private static GUIStyle _evenStyle;
+
+   private static GUIStyle OddStyle
+   {
+      get
+      {
+         if (_oddStyle == null)
+         {
+            _oddStyle = new GUIStyle();
+            Color col = EditorGUIUtility.isProSkin ? (Color) new Color32 (56, 56, 56, 255) : (Color) new Color32 (194, 194, 194, 255);
+            _oddStyle.normal.background = new Texture2D(1, 1);
+            _oddStyle.normal.background.SetPixel(0, 0, col + Color.white*0.03f);
+            _oddStyle.normal.background.Apply();
+         }
+         return _oddStyle;
+      }
+   }
+   private static GUIStyle _oddStyle;
+   
+   private static GUIStyle SelectedStyle
+   {
+      get
+      {
+         if (_oddStyle == null)
+         {
+            _selectedStyle = new GUIStyle();
+            ColorUtility.TryParseHtmlString("#204363", out var col);
+            _selectedStyle.normal.background = new Texture2D(1, 1);
+            _selectedStyle.normal.background.SetPixel(0, 0, col);
+            _selectedStyle.normal.background.Apply();
+         }
+         return _selectedStyle;
+      }
+   }
+   private static GUIStyle _selectedStyle;
+   #endregion
 }
