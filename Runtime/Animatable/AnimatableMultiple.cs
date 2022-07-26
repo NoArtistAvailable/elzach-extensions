@@ -245,9 +245,31 @@ namespace elZach.Common
             chainAtEndOfCurrent = null;
         }
         
-        public virtual Component[] GetValidComponents() => Targets.First().GetComponents<Component>();
         
-        #if UNITY_EDITOR
+        void OnValidate()   //this probably has to happen :(
+        {
+            var validComps = GetValidComponents();
+            foreach (var comp in clips.SelectMany(clip => clip.colorData))
+            {
+                if (validComps.Contains(comp.component)) continue;
+                var compType = comp.component.GetType();
+                comp.component = validComps.FirstOrDefault(x => x.GetType().IsAssignableFrom(compType));
+            }
+            foreach (var comp in clips.SelectMany(clip => clip.floatData))
+            {
+                if (validComps.Contains(comp.component)) continue;
+                var compType = comp.component.GetType();
+                comp.component = validComps.FirstOrDefault(x => x.GetType().IsAssignableFrom(compType));
+            }
+        }
+
+        public virtual Component[] GetValidComponents()
+        {
+            if (Targets == null || !Targets.Any()) return new Component[0];
+            return Targets?.First()?.GetComponents<Component>();
+        }
+
+#if UNITY_EDITOR
         [CustomEditor(typeof(AnimatableMultiple), true)]//, CanEditMultipleObjects]
         public class Inspector : Editor
         {

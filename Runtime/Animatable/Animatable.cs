@@ -244,6 +244,24 @@ namespace elZach.Common
             chainAtEndOfCurrent = null;
         }
 
+
+        void OnValidate()   //this probably has to happen :(
+        {
+            var validComps = GetValidComponents();
+            foreach (var comp in clips.SelectMany(clip => clip.colorData))
+            {
+                if (validComps.Contains(comp.component)) continue;
+                var compType = comp.component.GetType();
+                comp.component = validComps.FirstOrDefault(x => x.GetType().IsAssignableFrom(compType));
+            }
+            foreach (var comp in clips.SelectMany(clip => clip.floatData))
+            {
+                if (validComps.Contains(comp.component)) continue;
+                var compType = comp.component.GetType();
+                comp.component = validComps.FirstOrDefault(x => x.GetType().IsAssignableFrom(compType));
+            }
+        }
+        
         public Component[] GetValidComponents() => GetComponents<Component>();
 
 #pragma warning restore CS4014
