@@ -2,6 +2,10 @@
 All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.0.20] - 2022-07-26
+- added validation to components referenced in animatables
+- added new feature: Playmode Save
+
 ## [0.0.19-exp] - 2022-07-13
 - fixed animatable matrix calculation error
 
