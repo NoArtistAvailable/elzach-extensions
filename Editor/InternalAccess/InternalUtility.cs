@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using UnityEditor;
+using UnityEngine;
 
 namespace elZach.Access{
 
@@ -19,10 +20,21 @@ namespace elZach.Access{
     {
         public static object GetInternalStructValue(this SerializedProperty property)
 #if UNITY_2021_2_OR_NEWER
-            => property.isArray ? property.GetTargetObjectOfProperty() : property.boxedValue;
+            => property.isArray ? property.GetTargetObjectOfProperty() : property.structValue;
 #else
             => property.GetTargetObjectOfProperty();
 #endif
+        
+        public static void SetInternalStructValue(this SerializedProperty property, object value)
+#if UNITY_2021_2_OR_NEWER
+            { 
+                if (property.isArray) property.SetValue(value); 
+                else property.structValue = value;
+            }
+#else
+            => property.SetValue(value);
+#endif
+        
         
         //https://forum.unity.com/threads/get-a-general-object-value-from-serializedproperty.327098/#post-7569286
         private static object GetTargetObjectOfProperty(this SerializedProperty prop)
@@ -88,17 +100,26 @@ namespace elZach.Access{
         }
         
         //https://forum.unity.com/threads/get-a-general-object-value-from-serializedproperty.327098/#post-4098484
-        public static void SetValue( this SerializedProperty property, object val )
+        private static void SetValue( this SerializedProperty property, object val )
         {
             object obj = property.serializedObject.targetObject;
  
             List<KeyValuePair<FieldInfo, object>> list = new List<KeyValuePair<FieldInfo, object>>();
  
             FieldInfo field = null;
+            PropertyInfo propertyInfo = null;
             foreach( var path in property.propertyPath.Split( '.' ) )
             {
                 var type = obj.GetType();
                 field = type.GetField( path );
+                if (field == null)
+                {
+                    Debug.LogWarning($"null field at {path}");
+                    propertyInfo = type.GetProperty(path);
+                    Debug.LogWarning($"Property is {propertyInfo?.GetValue( obj )}");
+                    // RegexUtility.TryGetPropertyNameFromBackingField(path, out var propertyName);
+                    // field = type.
+                }
                 list.Add( new KeyValuePair<FieldInfo, object>( field, obj ) );
                 obj = field.GetValue( obj );
             }
