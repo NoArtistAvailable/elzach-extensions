@@ -20,7 +20,7 @@ namespace elZach.Access{
     {
         public static object GetInternalStructValue(this SerializedProperty property)
 #if UNITY_2021_2_OR_NEWER
-            => property.isArray ? property.GetTargetObjectOfProperty() : property.structValue;
+            => property.isArray ? property.GetTargetObjectOfProperty() : property.boxedValue;
 #else
             => property.GetTargetObjectOfProperty();
 #endif
