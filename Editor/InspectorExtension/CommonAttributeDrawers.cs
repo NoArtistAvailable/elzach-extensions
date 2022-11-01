@@ -7,6 +7,7 @@ using elZach.Access;
 using elZach.EditorHelper;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace elZach.Common
 {
@@ -335,5 +336,46 @@ namespace elZach.Common
             }
             EditorGUI.PropertyField(position, property, new GUIContent(stringValue), true);
         }
+    }
+    
+    [CustomPropertyDrawer(typeof(QuickSearchAttribute))]
+    public class QuickSearchAttributeDrawer : PropertyDrawer
+    {
+#if UNITY_2021_2_OR_NEWER
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            //base.OnGUI(position, property, label);
+            // position.height = EditorGUI.GetPropertyHeight(property);
+            position.width -= 22;
+            position.height = EditorGUI.GetPropertyHeight(property);
+            EditorGUI.PropertyField(position, property);
+            position.x += position.width;
+            position.width = 22;
+            position.height = EditorGUIUtility.singleLineHeight;
+            if (GUI.Button(position, "Q"))
+            {
+                GetItem(property, fieldInfo, (attribute as QuickSearchAttribute).searchText);
+            }
+        }
+    
+        public static void GetItem(SerializedProperty property, FieldInfo nfo, string searchText = "")
+        {
+            void SetObjectValue(Object obj, bool canceled)
+            {
+                // Debug.Log($"setting to {obj}", obj);
+                if (canceled) return;
+                property.objectReferenceValue = obj;
+                property.serializedObject.ApplyModifiedProperties();
+            }
+
+            void TrackingHandle(Object obj)
+            {
+                // Debug.Log($"Track handling {obj?.name}", obj);
+            }
+
+            var propertyType = nfo.FieldType;
+            UnityEditor.Search.SearchService.ShowObjectPicker(SetObjectValue, TrackingHandle, searchText, $"{propertyType.Name}", propertyType); //typeof(UnityEngine.Object));
+        }
+#endif
     }
 }

@@ -86,4 +86,15 @@ namespace elZach.Common
             this.IsProperty = isProperty;
         }
     }
+    
+    [AttributeUsage(AttributeTargets.Field)]
+    public class QuickSearchAttribute : PropertyAttribute
+    {
+        public string searchText;
+
+        public QuickSearchAttribute(string searchText = "")
+        {
+            this.searchText = searchText;
+        }
+    }
 }
