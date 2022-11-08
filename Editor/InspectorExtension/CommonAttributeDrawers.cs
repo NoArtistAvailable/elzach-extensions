@@ -3,11 +3,14 @@ using System.Collections;
 using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using elZach.Access;
 using elZach.EditorHelper;
 using UnityEditor;
+using UnityEditor.Search;
 using UnityEngine;
 using Object = UnityEngine.Object;
+using SearchItem = UnityEditor.Search.SearchItem;
 
 namespace elZach.Common
 {
@@ -354,7 +357,10 @@ namespace elZach.Common
             position.height = EditorGUIUtility.singleLineHeight;
             if (GUI.Button(position, "Q"))
             {
-                GetItem(property, fieldInfo, (attribute as QuickSearchAttribute).searchText);
+                if(fieldInfo.FieldType.IsSubclassOf(typeof(MonoBehaviour)))
+                    GetPrefab(property, fieldInfo);
+                else
+                    GetItem(property, fieldInfo, (attribute as QuickSearchAttribute).searchText);
             }
         }
     
@@ -374,7 +380,34 @@ namespace elZach.Common
             }
 
             var propertyType = nfo.FieldType;
-            UnityEditor.Search.SearchService.ShowObjectPicker(SetObjectValue, TrackingHandle, searchText, $"{propertyType.Name}", propertyType); //typeof(UnityEngine.Object));
+            var picker = UnityEditor.Search.SearchService.ShowObjectPicker(SetObjectValue, TrackingHandle, searchText, $"{propertyType.Name}", propertyType,850F,539F, SearchFlags.Sorted); //typeof(UnityEngine.Object));
+            picker.FocusSearch();
+        }
+
+        public static void GetPrefab(SerializedProperty property, FieldInfo nfo)
+        {
+            var propertyType = nfo.FieldType;
+            void SetObjectValue(SearchItem obj, bool canceled)
+            {
+                // Debug.Log($"setting to {obj}", obj);
+                if (property == null)
+                {
+                    Debug.LogWarning("No more property??");
+                    return;
+                }
+                if (canceled) return;
+                property.objectReferenceValue = (obj.ToObject() as GameObject)?.GetComponent(propertyType);
+                property.serializedObject.ApplyModifiedProperties();
+            }
+            async void AsyncSearch()
+            {
+                var search = SearchService.Request($"t:{propertyType.Name}", SearchFlags.Sorted);
+                while (search.pending) await Task.Yield();
+                // foreach(var entry in search) Debug.Log(entry.ToObject().name);
+                SearchService.ShowPicker(search.context, SetObjectValue);
+            }
+            AsyncSearch();
+
         }
 #endif
     }
