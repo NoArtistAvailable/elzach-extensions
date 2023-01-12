@@ -7,10 +7,13 @@ using System.Threading.Tasks;
 using elZach.Access;
 using elZach.EditorHelper;
 using UnityEditor;
-using UnityEditor.Search;
 using UnityEngine;
 using Object = UnityEngine.Object;
+
+#if UNITY_2022_1_OR_NEWER
+using UnityEditor.Search;
 using SearchItem = UnityEditor.Search.SearchItem;
+#endif
 
 namespace elZach.Common
 {
@@ -344,7 +347,7 @@ namespace elZach.Common
     [CustomPropertyDrawer(typeof(QuickSearchAttribute))]
     public class QuickSearchAttributeDrawer : PropertyDrawer
     {
-#if UNITY_2021_2_OR_NEWER
+#if UNITY_2022_1_OR_NEWER
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             //base.OnGUI(position, property, label);
