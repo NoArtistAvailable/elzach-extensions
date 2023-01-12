@@ -62,7 +62,7 @@ namespace elZach.Common
                {
                   Debug.LogWarning(
                      $"[{nameof(PlaymodeSave)}] failed, because object ID cannot be found anymore. Play Mode Save only works on objects which are present in the scene file.");
-#if UNITY_2021_2_OR_NEWER
+#if UNITY_2022_1_OR_NEWER
                   Debug.LogWarning(
                      $"[{nameof(PlaymodeSave)}] lost data: {entry.componentType}/{entry.property.propertyPath} ({(entry.property.isArray ? "List" : $"{entry.property.boxedValue}")})");
 #endif
@@ -93,7 +93,7 @@ namespace elZach.Common
          }
          else
          {
-#if UNITY_2021_2_OR_NEWER
+#if UNITY_2022_1_OR_NEWER
             target.boxedValue = source.boxedValue;
 #else
             target.SetBoxedValue(source.GetBoxedValue());
