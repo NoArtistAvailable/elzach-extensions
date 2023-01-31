@@ -189,9 +189,6 @@ namespace elZach.Common
         private AnimationModeDriver driver;
         IEnumerator TransitionTo(DrivenClip clip)
         {
-            if (!driver)
-                TogglePreviewMode();
-            
             int clipIndex = clips.IndexOf(clip);
             var children = Targets.ToArray();
             
@@ -355,59 +352,68 @@ namespace elZach.Common
                 // EditorGUI.BeginDisabledGroup(!Application.isPlaying);
 
                 if (GUILayout.Button(AnimationMode.InAnimationMode() ? "Stop Preview" : "Start Preview"))
-                    t.TogglePreviewMode();
+                    TogglePreviewMode(t);
                 
                 EditorGUILayout.BeginHorizontal();
                 
                 for (int i = 0; i < t.clips.Count; i++)
                 {
-                    if (GUILayout.Button(i.ToString())) t.Play(i);
+                    if (GUILayout.Button(i.ToString()))
+                    {
+                        if (!AnimationMode.InAnimationMode())
+                            TogglePreviewMode(t);
+                        
+                        t.Play(i);
+                    }
                 }
                 EditorGUILayout.EndHorizontal();
                 EditorGUI.EndDisabledGroup();
             }
-        }
-
-        private PlayableGraph dummyGraph;
-        
-        private void TogglePreviewMode()
-        {
-            if (!AnimationMode.InAnimationMode())
+            
+            private PlayableGraph dummyGraph;
+            private void TogglePreviewMode(AnimatableMultiple t)
             {
-                driver = ScriptableObject.CreateInstance<AnimationModeDriver>();
-                AnimationMode.StartAnimationMode(driver);
-                InternalAnimationUtility.StartAnimationPlaybackMode();
-                
-                InternalAnimationUtility.AttachResponder();
-                
-                // HACK to make the Editor update each frame: make a playable graph and play it
-                dummyGraph = PlayableGraph.Create();
-                var output = AnimationPlayableOutput.Create(dummyGraph, "output", GetComponent<Animator>());
-                var cl = new AnimationClip();
-                var clip = AnimationClipPlayable.Create(dummyGraph, cl);
-                output.SetSourcePlayable(clip);
-                dummyGraph.Play();
-            }
-            else
-            {
-                InternalAnimationUtility.StopAnimationPlaybackMode();
-                AnimationMode.EndSampling();
-                AnimationMode.StopAnimationMode(driver);
-                driver = null;
-                
-                InternalAnimationUtility.DetachResponder();
-                
-                // HACK for making sure animated property blocks don't stick around
-                
-                foreach (var child in Targets)
+                var driver = t.driver;
+                if (!AnimationMode.InAnimationMode())
                 {
-                    child.GetComponent<Renderer>().SetPropertyBlock(null);
+                    if (!driver)
+                    {
+                        driver = ScriptableObject.CreateInstance<AnimationModeDriver>();
+                        t.driver = driver;
+                    }
+                    
+                    AnimationMode.StartAnimationMode(driver);
+                    InternalAnimationUtility.StartAnimationPlaybackMode();
+                
+                    InternalAnimationUtility.AttachResponder();
+                
+                    // HACK to make the Editor update each frame: make a playable graph and play it
+                    dummyGraph = PlayableGraph.Create();
+                    var output = AnimationPlayableOutput.Create(dummyGraph, "output", t.GetComponent<Animator>());
+                    var cl = new AnimationClip();
+                    var clip = AnimationClipPlayable.Create(dummyGraph, cl);
+                    output.SetSourcePlayable(clip);
+                    dummyGraph.Play();
                 }
-                
-                if (dummyGraph.IsValid())
+                else
                 {
-                    dummyGraph.Stop();
-                    dummyGraph.Destroy();
+                    InternalAnimationUtility.StopAnimationPlaybackMode();
+                    AnimationMode.EndSampling();
+                    AnimationMode.StopAnimationMode(t.driver);
+                    t.driver = null;
+                
+                    InternalAnimationUtility.DetachResponder();
+                
+                    // HACK for making sure animated property blocks don't stick around
+                
+                    foreach (var child in t.Targets)
+                        child.GetComponent<Renderer>().SetPropertyBlock(null);
+                
+                    if (dummyGraph.IsValid())
+                    {
+                        dummyGraph.Stop();
+                        dummyGraph.Destroy();
+                    }
                 }
             }
         }
