@@ -10,7 +10,13 @@ using elZach.Access;
 
 namespace elZach.Common
 {
-    public abstract class BasePropertyReference<T> : IGetSetSource
+    public interface IHasPropertyPath
+    {
+        public string propertyPath { get; }
+        public Component component { get; }
+    }
+    
+    public abstract class BasePropertyReference<T> : IHasPropertyPath, IGetSetSource
     {
         public abstract Component component { get; set; }
 
