@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using UnityEditor;
 #endif
 using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
 
 namespace elZach.Common
 {
@@ -119,6 +121,7 @@ namespace elZach.Common
                 StopCoroutine(currentTransition);
                 currentTransition = null;
             }
+            AnimationMode.StopAnimationMode(driver);
         }
 
         public void SetTo(int index) => SetTo(clips[index]);
@@ -182,7 +185,8 @@ namespace elZach.Common
             currentTransition = StartCoroutine(TransitionTo(clip));
             while (currentTransition != null) await Task.Yield();
         }
-        
+
+        private AnimationModeDriver driver;
         IEnumerator TransitionTo(DrivenClip clip)
         {
             int clipIndex = clips.IndexOf(clip);
@@ -203,6 +207,47 @@ namespace elZach.Common
                 .Concat(clip.floatData.Select<AnimatableHelpers.FloatReference, (object startPos, object target)>(x=> (x.TargetSourceValue, x.Value)))
                 .ToArray();
 
+            AnimationMode.BeginSampling();
+            
+            foreach (var child in children)
+            {
+                InternalAnimationUtility.AddTransformTRS(child.gameObject, "");
+            }
+            
+            // TODO this doesn't work
+            // foreach (var thing in customs)
+            // {
+            //     var prop = (IHasPropertyPath)thing.Item1;
+            //     var obj = (UnityEngine.Object) prop;
+            //     var path = prop.propertyPath;
+            //     Debug.Log("path: " + path, obj);
+            //     AnimationMode.AddPropertyModification(default, new PropertyModification() { objectReference = (UnityEngine.Object) thing.target, propertyPath = path }, false);
+            // }
+
+            // TODO probably this one should be used:
+            // MaterialAnimationUtility.ApplyMaterialModificationToAnimationRecording
+            
+            foreach (var dat in clip.colorData)
+            {
+                foreach(var child in children)
+                {
+
+                    var suffixes = new[]
+                    {
+                        ".r", ".g", ".b", ".a"
+                    };
+
+                    foreach (var suffix in suffixes)
+                    {
+                        var binding = new EditorCurveBinding() { type = typeof(MeshRenderer), path = child.name, propertyName = "material." + dat.propertyPath + suffix };
+                        // AnimationMode.AddPropertyModification(binding, new PropertyModification() { objectReference = child.GetComponent<MeshRenderer>(), propertyPath = "material." + dat.propertyPath + suffix }, false);
+                        AnimationMode.AddEditorCurveBinding(child.gameObject, binding);
+                    }
+                }
+            }
+            
+            InternalAnimationUtility.AddTransformTRS(gameObject, "");
+            
             // float progress = 0f;
             float startTime = Time.time;
             int haveToFinish = children.Length;
@@ -221,7 +266,9 @@ namespace elZach.Common
                         childTransitionFinished.Add(i, false);
                         childStartedTransition?.Invoke(children[i], clipIndex);
                     } else if (finished) continue;
+                    
                     clip.EvaluateOn(progress, children[i].gameObject, startPos[i], targetPos[i], startRot[i], targetRot[i], startScale[i], targetScale[i], customs);
+                    
                     if (progress >= 1f)
                     {
                         childTransitionFinished[i] = true;
@@ -244,7 +291,32 @@ namespace elZach.Common
             chainAtEndOfCurrent?.Invoke();
             chainAtEndOfCurrent = null;
         }
+
+        [MenuItem("CONTEXT/MeshRenderer/Clear Property Block")]
+        static void ClearBlock(MenuCommand menuCommand)
+        {
+            var renderer = menuCommand.context as Renderer;
+            renderer.SetPropertyBlock(null);
+
+        }
         
+        [MenuItem("Test/Log Me")]
+        static void LogMe()
+        {
+            var s = Selection.activeObject as GameObject;
+            var a = s.GetComponent<Animator>();
+            // get all EditorCurveBindings from a
+            var clips = AnimationUtility.GetAnimationClips(a.gameObject);
+            var firstClip = clips[0];
+            var bindings = AnimationUtility.GetCurveBindings(firstClip);
+            foreach (var binding in bindings)
+            {
+                var curve = AnimationUtility.GetEditorCurve(firstClip, binding);
+                Debug.Log(binding.propertyName + " " + curve.keys.Length);
+            }
+            // get all AnimationClips from a
+            
+        }
         
         void OnValidate()   //this probably has to happen :(
         {
@@ -277,17 +349,75 @@ namespace elZach.Common
             {
                 DrawDefaultInspector();
                 var t = target as AnimatableMultiple;
-                EditorGUI.BeginDisabledGroup(!Application.isPlaying);
+                // EditorGUI.BeginDisabledGroup(!Application.isPlaying);
+
+                if (GUILayout.Button(AnimationMode.InAnimationMode() ? "Stop Preview" : "Start Preview"))
+                    TogglePreviewMode(t);
+                
                 EditorGUILayout.BeginHorizontal();
+                
                 for (int i = 0; i < t.clips.Count; i++)
                 {
-                    if (GUILayout.Button(i.ToString())) t.Play(i);
+                    if (GUILayout.Button(i.ToString()))
+                    {
+                        if (!AnimationMode.InAnimationMode())
+                            TogglePreviewMode(t);
+                        
+                        t.Play(i);
+                    }
                 }
                 EditorGUILayout.EndHorizontal();
                 EditorGUI.EndDisabledGroup();
             }
-        }        
-        #endif
+            
+            private PlayableGraph dummyGraph;
+            private void TogglePreviewMode(AnimatableMultiple t)
+            {
+                var driver = t.driver;
+                if (!AnimationMode.InAnimationMode())
+                {
+                    if (!driver)
+                    {
+                        driver = ScriptableObject.CreateInstance<AnimationModeDriver>();
+                        t.driver = driver;
+                    }
+                    
+                    AnimationMode.StartAnimationMode(driver);
+                    InternalAnimationUtility.StartAnimationPlaybackMode();
+                
+                    InternalAnimationUtility.AttachResponder();
+                
+                    // HACK to make the Editor update each frame: make a playable graph and play it
+                    dummyGraph = PlayableGraph.Create();
+                    var output = AnimationPlayableOutput.Create(dummyGraph, "output", t.GetComponent<Animator>());
+                    var cl = new AnimationClip();
+                    var clip = AnimationClipPlayable.Create(dummyGraph, cl);
+                    output.SetSourcePlayable(clip);
+                    dummyGraph.Play();
+                }
+                else
+                {
+                    InternalAnimationUtility.StopAnimationPlaybackMode();
+                    AnimationMode.EndSampling();
+                    AnimationMode.StopAnimationMode(t.driver);
+                    t.driver = null;
+                
+                    InternalAnimationUtility.DetachResponder();
+                
+                    // HACK for making sure animated property blocks don't stick around
+                
+                    foreach (var child in t.Targets)
+                        child.GetComponent<Renderer>().SetPropertyBlock(null);
+                
+                    if (dummyGraph.IsValid())
+                    {
+                        dummyGraph.Stop();
+                        dummyGraph.Destroy();
+                    }
+                }
+            }
+        }
+#endif
         
 #pragma warning restore CS4014
     }
