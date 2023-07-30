@@ -20,7 +20,7 @@ namespace elZach.Access{
     {
         public static object GetInternalStructValue(this SerializedProperty property)
 #if UNITY_2022_1_OR_NEWER
-            => property.isArray ? property.GetTargetObjectOfProperty() : property.boxedValue;
+            => property.isArray ? property.GetTargetObjectOfProperty() : property.structValue;
 #else
             => property.GetTargetObjectOfProperty();
 #endif
@@ -37,7 +37,7 @@ namespace elZach.Access{
         
         
         //https://forum.unity.com/threads/get-a-general-object-value-from-serializedproperty.327098/#post-7569286
-        private static object GetTargetObjectOfProperty(this SerializedProperty prop)
+        public static object GetTargetObjectOfProperty(this SerializedProperty prop)
         {
             var path = prop.propertyPath.Replace(".Array.data[", "[");
             object obj = prop.serializedObject.targetObject;
