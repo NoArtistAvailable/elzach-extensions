@@ -10,7 +10,13 @@ using elZach.Access;
 
 namespace elZach.Common
 {
-    public abstract class BasePropertyReference<T> : IGetSetSource
+    public interface IHasPropertyPath
+    {
+        public string propertyPath { get; }
+        public Component component { get; }
+    }
+
+    public abstract class BasePropertyReference<T> : IHasPropertyPath, IGetSetSource
     {
         public abstract Component component { get; set; }
 
@@ -88,8 +94,6 @@ namespace elZach.Common
     
     
 #if UNITY_EDITOR
-    // [CustomPropertyDrawer(typeof(FieldReference<float>))]
-    // public class FloatDrawer : Drawer<float>{}
     [CustomPropertyDrawer(typeof(BasePropertyReference<>), true)]
     public class PropertyReferenceDrawer : PropertyDrawer
     {
@@ -110,12 +114,12 @@ namespace elZach.Common
             rect.height += 3;
             if (GUI.Button(new Rect(rect.x+rect.width,rect.y,30,rect.height), "get"))
             {
-                ((IGetSetSource) property.GetInternalStructValue()).GetFromSource();
+                ((IGetSetSource) property.GetTargetObjectOfProperty()).GetFromSource();
                 property.serializedObject.ApplyModifiedProperties();
             }
             if (GUI.Button(new Rect(rect.x+rect.width+30,rect.y,30,rect.height), "set"))
             {
-                ((IGetSetSource) property.GetInternalStructValue()).ApplyToSource();
+                ((IGetSetSource) property.GetTargetObjectOfProperty()).ApplyToSource();
             }
             rect.width += 60;
             if (property.isExpanded)
