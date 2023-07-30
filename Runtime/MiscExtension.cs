@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
+using Object = UnityEngine.Object;
 
 namespace elZach.Common
 {
@@ -205,6 +206,14 @@ namespace elZach.Common
             {
                 var child = transform.GetChild(i);
                 if (includeInactive || child.gameObject.activeSelf) yield return child;
+            }
+        }
+
+        public static void ClearChildren(this Transform transform)
+        {
+            for (int i = transform.childCount-1; i >= 0; i--)
+            {
+                Object.Destroy(transform.GetChild(i).gameObject);
             }
         }
     }
