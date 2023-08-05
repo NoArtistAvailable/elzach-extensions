@@ -22,7 +22,7 @@ namespace elZach.Common
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if(!(attribute as StringOnlyAttribute).showOnlyValue) position = EditorGUI.PrefixLabel(position, label);
+            if (!(attribute as StringOnlyAttribute).showOnlyValue) position = EditorGUI.PrefixLabel(position, label);
             switch (property.propertyType)
             {
                 case SerializedPropertyType.ObjectReference:
@@ -40,7 +40,7 @@ namespace elZach.Common
             }
         }
     }
-    
+
     [CustomPropertyDrawer(typeof(FolderAttribute))]
     public class FolderAttributeDrawer : PropertyDrawer
     {
@@ -59,11 +59,11 @@ namespace elZach.Common
             position.x = position.x + 22;
             position.width = width - 22;
             position = EditorGUI.PrefixLabel(position, label);
-        
+
             GUI.Label(position, property.stringValue);
         }
     }
-    
+
     [CustomPropertyDrawer(typeof(InfoAttribute))]
     public class InfoAttributeDrawer : DecoratorDrawer
     {
@@ -77,7 +77,7 @@ namespace elZach.Common
 
         public override void OnGUI(Rect position)
         {
-            if(position.height > 0 && attribute is InfoAttribute info && !string.IsNullOrEmpty(info.message)) 
+            if (position.height > 0 && attribute is InfoAttribute info && !string.IsNullOrEmpty(info.message))
                 DrawHelpBox(ref position, info);
             // switch (info.drawType)
             // {
@@ -93,7 +93,7 @@ namespace elZach.Common
             //         DrawHelpBox(ref position, info);
             //         break;
             // }
-        
+
         }
 
         void DrawHelpBox(ref Rect position, InfoAttribute info)
@@ -108,7 +108,7 @@ namespace elZach.Common
         //     position.position = new Vector2(position.position.x, position.position.y + base.GetPropertyHeight(property, label));
         // }
     }
-    
+
     [CustomPropertyDrawer(typeof(ShowSpriteAttribute))]
     public class ShowSpriteAttributeDrawer : PropertyDrawer
     {
@@ -130,33 +130,33 @@ namespace elZach.Common
                 DrawTexturePreview(position, tex);
             }
         }
-        
+
         //taken from https://forum.unity.com/threads/drawing-a-sprite-in-editor-window.419199/
         public static void DrawTexturePreview(Rect position, Sprite sprite)
         {
             Vector2 fullSize = new Vector2(sprite.texture.width, sprite.texture.height);
             Vector2 size = new Vector2(sprite.textureRect.width, sprite.textureRect.height);
- 
+
             Rect coords = sprite.textureRect;
             coords.x /= fullSize.x;
             coords.width /= fullSize.x;
             coords.y /= fullSize.y;
             coords.height /= fullSize.y;
- 
+
             Vector2 ratio;
             ratio.x = position.width / size.x;
             ratio.y = position.height / size.y;
             float minRatio = Mathf.Min(ratio.x, ratio.y);
- 
+
             Vector2 center = position.center;
             position.width = size.x * minRatio;
             position.height = size.y * minRatio;
             position.center = center;
- 
+
             GUI.DrawTextureWithTexCoords(position, sprite.texture, coords);
         }
     }
-    
+
     [CustomPropertyDrawer(typeof(Vector2RangeAttribute))]
     public class Vector2RangeAttributeDrawer : PropertyDrawer
     {
@@ -170,7 +170,7 @@ namespace elZach.Common
         {
             var rangeAttribute = attribute as Vector2RangeAttribute;
             EditorGUI.PrefixLabel(position, label);
-            
+
             Vector2 value = property.vector2Value;
             position.height = EditorGUIUtility.singleLineHeight;
             position.width -= EditorGUIUtility.labelWidth;
@@ -186,24 +186,25 @@ namespace elZach.Common
             property.vector2Value = value;
         }
     }
-    
+
     [CustomPropertyDrawer(typeof(ShowIfAttribute))]
     public class ShowIfAttributeDrawer : PropertyDrawer
     {
         private ShowIfAttribute Conditional => attribute as ShowIfAttribute;
-        
+
         bool Condition(SerializedProperty property)
         {
             object target = property.serializedObject.targetObject;
             var propertyPath = property.propertyPath;
-            propertyPath = (propertyPath != null && propertyPath.Contains(".")) ?
-                propertyPath.Substring(0, propertyPath.LastIndexOf(".", StringComparison.Ordinal))
+            propertyPath = (propertyPath != null && propertyPath.Contains("."))
+                ? propertyPath.Substring(0, propertyPath.LastIndexOf(".", StringComparison.Ordinal))
                 : "";
             if (propertyPath.Length > 0)
             {
                 target = property.serializedObject.FindProperty(propertyPath)?.GetInternalStructValue();
             }
-            return (bool) GetValue(target, Conditional.Condition);
+
+            return (bool)GetValue(target, Conditional.Condition);
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -237,7 +238,7 @@ namespace elZach.Common
     public class DropdownAttributeDrawer : PropertyDrawer
     {
         private DropdownAttribute Dropdown => attribute as DropdownAttribute;
-        
+
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             return EditorGUIUtility.singleLineHeight;
@@ -267,11 +268,12 @@ namespace elZach.Common
                                 // We're in an array
                                 var rootObjectType = targetObject.GetType();
                                 var listFieldInfo = rootObjectType.GetField(listName);
-                                var list = (IList) listFieldInfo.GetValue(targetObject);
+                                var list = (IList)listFieldInfo.GetValue(targetObject);
                                 list[index] = option;
                                 property.serializedObject.ApplyModifiedProperties();
                                 return;
                             }
+
                             path = path.Substring(path.LastIndexOf(".") + 1);
                         }
 
@@ -288,6 +290,7 @@ namespace elZach.Common
                             else Debug.Log($"{targetObject.GetType()} doesnt contain field or backed property named {path}");
                         }
                         else targetField.SetValue(targetObject, option);
+
                         property.serializedObject.ApplyModifiedProperties();
                     });
                 }
@@ -296,7 +299,7 @@ namespace elZach.Common
                 menu.ShowAsContext();
             }
         }
-        
+
         IList Options(SerializedProperty property)
         {
             object target;
@@ -326,6 +329,7 @@ namespace elZach.Common
     public class LabelAsAttributeDrawer : PropertyDrawer
     {
         private LabelAsAttribute LabelAs => attribute as LabelAsAttribute;
+
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             return EditorGUI.GetPropertyHeight(property, label, true);
@@ -340,10 +344,11 @@ namespace elZach.Common
                 var type = obj.GetType();
                 stringValue = type.GetProperty(LabelAs.Label)?.GetValue(obj) as string;
             }
+
             EditorGUI.PropertyField(position, property, new GUIContent(stringValue), true);
         }
     }
-    
+
     [CustomPropertyDrawer(typeof(QuickSearchAttribute))]
     public class QuickSearchAttributeDrawer : PropertyDrawer
     {
@@ -360,13 +365,13 @@ namespace elZach.Common
             position.height = EditorGUIUtility.singleLineHeight;
             if (GUI.Button(position, "Q"))
             {
-                if(fieldInfo.FieldType.IsSubclassOf(typeof(MonoBehaviour)))
+                if (fieldInfo.FieldType.IsSubclassOf(typeof(MonoBehaviour)))
                     GetPrefab(property, fieldInfo);
                 else
                     GetItem(property, fieldInfo, (attribute as QuickSearchAttribute).searchText);
             }
         }
-    
+
         public static void GetItem(SerializedProperty property, FieldInfo nfo, string searchText = "")
         {
             void SetObjectValue(Object obj, bool canceled)
@@ -390,6 +395,7 @@ namespace elZach.Common
         public static void GetPrefab(SerializedProperty property, FieldInfo nfo)
         {
             var propertyType = nfo.FieldType;
+
             void SetObjectValue(SearchItem obj, bool canceled)
             {
                 // Debug.Log($"setting to {obj}", obj);
@@ -398,10 +404,12 @@ namespace elZach.Common
                     Debug.LogWarning("No more property??");
                     return;
                 }
+
                 if (canceled) return;
                 property.objectReferenceValue = (obj.ToObject() as GameObject)?.GetComponent(propertyType);
                 property.serializedObject.ApplyModifiedProperties();
             }
+
             async void AsyncSearch()
             {
                 var search = SearchService.Request($"t:{propertyType.Name}", SearchFlags.Sorted);
@@ -409,9 +417,43 @@ namespace elZach.Common
                 // foreach(var entry in search) Debug.Log(entry.ToObject().name);
                 SearchService.ShowPicker(search.context, SetObjectValue);
             }
+
             AsyncSearch();
 
         }
 #endif
+    }
+
+    [CustomPropertyDrawer(typeof(HasInterfaceOrBaseAttribute))]
+    public class HasInterfaceOrBaseAttributeDrawer : PropertyDrawer
+    {
+        private HasInterfaceOrBaseAttribute info => attribute as HasInterfaceOrBaseAttribute;
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return EditorGUI.GetPropertyHeight(property, label, true);
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            EditorGUI.BeginProperty(position, label, property);
+            var serializedType = fieldInfo.FieldType;
+            var prev = property.objectReferenceValue;
+            // var go = EditorGUI.ObjectField(position, label, property.objectReferenceValue, serializedType, true) as Component;
+            EditorGUI.PropertyField(position, property, label, true);
+            var go = property.objectReferenceValue as Component;
+            if (prev != go)
+            {
+                if (!go) property.objectReferenceValue = null;
+                else
+                {
+                    var type = info.type;
+                    var comp = go.GetComponent(type);
+                    property.objectReferenceValue = comp;
+                }
+            }
+
+            EditorGUI.EndProperty();
+        }
     }
 }

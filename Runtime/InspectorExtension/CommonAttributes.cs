@@ -97,4 +97,16 @@ namespace elZach.Common
             this.searchText = searchText;
         }
     }
+    
+    [AttributeUsage(AttributeTargets.Field)]
+    public class HasInterfaceOrBaseAttribute : PropertyAttribute
+    {
+        public Type type;
+
+        public HasInterfaceOrBaseAttribute(Type type)
+        {
+            this.type = type;
+        }
+    }
+
 }
