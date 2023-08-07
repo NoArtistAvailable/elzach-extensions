@@ -208,6 +208,19 @@ namespace elZach.Common
                 if (includeInactive || child.gameObject.activeSelf) yield return child;
             }
         }
+		
+		public static IEnumerable<Transform> GetChildrenRecursive(this Transform transform, bool includeInactive = false)
+        {
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                var child = transform.GetChild(i);
+                if (includeInactive || child.gameObject.activeSelf) {
+					yield return child;
+					foreach(var childOf in child.GetChildrenRecursive(includeInactive))
+						yield return childOf;
+				}
+            }
+        }
 
         public static void ClearChildren(this Transform transform)
         {
