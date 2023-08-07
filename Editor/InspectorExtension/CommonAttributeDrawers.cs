@@ -437,9 +437,7 @@ namespace elZach.Common
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginProperty(position, label, property);
-            var serializedType = fieldInfo.FieldType;
             var prev = property.objectReferenceValue;
-            // var go = EditorGUI.ObjectField(position, label, property.objectReferenceValue, serializedType, true) as Component;
             EditorGUI.PropertyField(position, property, label, true);
             var go = property.objectReferenceValue as Component;
             if (prev != go)
@@ -452,7 +450,6 @@ namespace elZach.Common
                     property.objectReferenceValue = comp;
                 }
             }
-
             EditorGUI.EndProperty();
         }
     }
