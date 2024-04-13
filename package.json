@@ -6,7 +6,7 @@
     "email": "felix.reinemann@gmail.com",
     "url": ""
   },
-  "version": "0.0.25",
+  "version": "0.0.26",
   "unity": "2020.1",
   "unityRelease": "0a10",
   "description": "Package which contains common functions, neccessary for other tools.",
