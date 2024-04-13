@@ -18,6 +18,7 @@ namespace elZach.Common
         public event Action<Transform, int> childStartedTransition, childEndedTransition;
 
         private Dictionary<Transform, Matrix4x4> _initialMatrices = new Dictionary<Transform, Matrix4x4>();
+        public bool IsPlaying => currentTransition != null;
 
         public abstract IEnumerable<Transform> Targets { get; }
 
