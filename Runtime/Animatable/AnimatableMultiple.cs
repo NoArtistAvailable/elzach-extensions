@@ -222,6 +222,15 @@ namespace elZach.Common
                         childTransitionFinished.Add(i, false);
                         childStartedTransition?.Invoke(children[i], clipIndex);
                     } else if (finished) continue;
+                    
+                    // in case children get destroyed during the transition
+                    if (!children[i])
+                    {
+                        childTransitionFinished[i] = true;
+                        haveToFinish--;
+                        continue;
+                    }
+                    
                     clip.EvaluateOn(progress, children[i].gameObject, startPos[i], targetPos[i], startRot[i], targetRot[i], startScale[i], targetScale[i], customs);
                     if (progress >= 1f)
                     {
@@ -235,6 +244,7 @@ namespace elZach.Common
 
             for (int i = 0; i < children.Length; i++)
             {
+                if(!children[i]) continue;
                 clip.EvaluateOn(1f, children[i].gameObject, startPos[i], targetPos[i], startRot[i], targetRot[i], startScale[i], targetScale[i], customs);
                 // if(!childTransitionFinished.ContainsKey(i) || !childTransitionFinished[i]) childEndedTransition?.Invoke(children[i], clipIndex);
             }
