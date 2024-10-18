@@ -15,6 +15,15 @@ namespace elZach.Common
         public string value;
 #if UNITY_EDITOR
         [SerializeField] SceneAsset sceneAsset;
+        public SceneAsset SceneAsset
+        {
+            get => sceneAsset;
+            set
+            {
+                this.value = value? value.name : "";
+                sceneAsset = value;
+            }
+        }
 #endif
     }
     
