@@ -18,6 +18,7 @@ namespace elZach.Common
 
 			var animateOnEnableProperty = serializedObject.FindProperty(nameof(Animatable.animateAtOnEnable));
 			var animateToProperty = serializedObject.FindProperty(nameof(Animatable.animateAtOnEnableTo));
+			var timeScaleProperty = serializedObject.FindProperty(nameof(Animatable.unscaledTime));
 			var clipsProperty = serializedObject.FindProperty(nameof(Animatable.clips));
 			
 			var rect = EditorGUILayout.GetControlRect(true, EditorGUIUtility.singleLineHeight);
@@ -28,6 +29,8 @@ namespace elZach.Common
 			EditorGUI.BeginDisabledGroup(!animateOnEnableProperty.boolValue);
 			animateToProperty.intValue = EditorGUI.IntField(rect, animateToProperty.intValue);
 			EditorGUI.EndDisabledGroup();
+
+			EditorGUILayout.PropertyField(timeScaleProperty);
 			
 			EditorGUILayout.PropertyField(clipsProperty);
 			serializedObject.ApplyModifiedProperties();

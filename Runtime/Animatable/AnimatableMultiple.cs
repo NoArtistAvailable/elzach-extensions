@@ -15,6 +15,8 @@ namespace elZach.Common
 #pragma warning disable CS4014
         public bool animateAtOnEnable = true;
         public int animateAtOnEnableTo = 1;
+        public bool unscaledTime = false;
+        public float usedTime => unscaledTime ? Time.unscaledTime : Time.time;
         public event Action<Transform, int> childStartedTransition, childEndedTransition;
 
         private Dictionary<Transform, Matrix4x4> _initialMatrices = new Dictionary<Transform, Matrix4x4>();
@@ -205,13 +207,13 @@ namespace elZach.Common
                 .ToArray();
 
             // float progress = 0f;
-            float startTime = Time.time;
+            float startTime = usedTime;
             int haveToFinish = children.Length;
             clip.events.OnStarted.Invoke();
             Dictionary<int, bool> childTransitionFinished = new Dictionary<int, bool>();
             while (haveToFinish>0)
             {
-                var timePassed = Time.time - startTime;
+                var timePassed = usedTime - startTime;
                 for (int i = 0; i < children.Length; i++)
                 {
                     float progress = Mathf.Clamp01((timePassed - clip.driver.GetDelay(i,children.Length)) / (clip.time * clip.driver.GetDurationMultiplier(i, children.Length)));

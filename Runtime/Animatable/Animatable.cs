@@ -113,6 +113,8 @@ namespace elZach.Common
         
         public bool animateAtOnEnable = true;
         public int animateAtOnEnableTo = 1;
+        public bool unscaledTime = false;
+        private float deltaTime => unscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
         private Matrix4x4 initialMatrix;
 
         public List<Clip> clips = new List<Clip>()
@@ -231,7 +233,7 @@ namespace elZach.Common
             clip.events.OnStarted.Invoke();
             while (progress < 1f)
             {
-                progress += Time.deltaTime / clip.time;
+                progress += deltaTime / clip.time;
                 clip.Evaluate(progress, transform, startPos, targetPos, startRot, targetRot, startScale, targetScale, customs);
                 yield return null;
             }
