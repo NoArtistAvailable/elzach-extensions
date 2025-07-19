@@ -4,9 +4,9 @@
   "author": {
     "name": "elZach",
     "email": "felix.reinemann@gmail.com",
-    "url": ""
+    "url": "https://github.com/NoArtistAvailable/elzach-extensions"
   },
-  "version": "0.0.27",
+  "version": "0.0.28",
   "unity": "2020.1",
   "unityRelease": "0a10",
   "description": "Package which contains common functions, neccessary for other tools.",
