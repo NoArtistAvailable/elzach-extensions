@@ -38,10 +38,18 @@ namespace elZach.Common
         public class DriverData
         {
             public enum Key{None, Index, InverseIndex}
-            public Key key;
+            public Key key = Key.Index;
             public Vector2 delay;
             public Vector2 durationMultiplier;
 
+            public DriverData(){}
+            public DriverData(Key key, Vector2 delay, Vector2 durationMultiplier)
+            {
+                this.key = key;
+                this.delay = delay;
+                this.durationMultiplier = durationMultiplier;
+            }
+            
             private float? Map(int index, int count, Vector2 range)
             {
                 return key switch
@@ -62,14 +70,22 @@ namespace elZach.Common
         [Serializable]
         public class DrivenClip : Animatable.Clip
         {
-            public DriverData driver = new DriverData(){delay = Vector2.one * .1f, durationMultiplier = Vector2.one};
+            public DriverData driver = new DriverData(DriverData.Key.Index, Vector2.one * .1f, Vector2.one);
             public ParentActivator parentActivator;
+            public DrivenClip(){}
+
+            public DrivenClip(DriverData driver, ParentActivator parentActivator)
+            {
+                this.driver = driver;
+                this.parentActivator = parentActivator;
+            }
         }
 
         public List<DrivenClip> clips = new List<DrivenClip>()
         {
             new DrivenClip()
             {
+                driver = new DriverData(DriverData.Key.InverseIndex, Vector2.one * .1f, Vector2.one),
                 curve = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(1f, 1f)),
                 time = 0.25f,
                 data = new Animatable.TransformData() { localScale = Vector3.zero },
@@ -77,6 +93,7 @@ namespace elZach.Common
             },
             new DrivenClip()
             {
+                driver = new DriverData(DriverData.Key.Index, Vector2.one * .1f, Vector2.one),
                 curve = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(0.75f, 1.2f), new Keyframe(1f, 1f)),
                 time = 0.35f,
                 data = new Animatable.TransformData() { localScale = Vector3.one },
