@@ -224,10 +224,12 @@ namespace elZach.Common
 
         public static void ClearChildren(this Transform transform)
         {
-            for (int i = transform.childCount-1; i >= 0; i--)
-            {
-                Object.Destroy(transform.GetChild(i).gameObject);
-            }
+            if(Application.isPlaying)
+                for (int i = transform.childCount-1; i >= 0; i--)
+                    Object.Destroy(transform.GetChild(i).gameObject);
+            else
+                for (int i = transform.childCount - 1; i >= 0; i--)
+                    Object.DestroyImmediate(transform.GetChild(i).gameObject);
         }
     }
 }
