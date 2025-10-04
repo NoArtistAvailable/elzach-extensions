@@ -75,7 +75,9 @@ namespace elZach.Common
             protected override string[] GetValidProperties()
             {
                 if (component is Renderer renderer)
-                    return renderer.sharedMaterial.shader.GetPropertyNames(ShaderPropertyType.Float).ToArray();
+                    return renderer.sharedMaterial.shader.GetPropertyNames(ShaderPropertyType.Float)
+                        .Concat(renderer.sharedMaterial.shader.GetPropertyNames(ShaderPropertyType.Range))
+                        .ToArray();
                 return base.GetValidProperties();
             }
             public override float TargetSourceValue 
