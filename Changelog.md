@@ -2,6 +2,12 @@
 All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.1.0] - 2025-10-04
+- separated Animatables to their own folder & assembly structure
+- improved dropdown attribute
+- renderer extensions now return material values even if no blocks or set
+- animatable single values now include ShaderPropertyType.Range
+
 ## [0.0.28] - 2025-07-19
 - added get/set for editor only scene assets to SceneReference
 - added unscaled time option to animatable
