@@ -290,7 +290,7 @@ namespace elZach.Common
                             else Debug.Log($"{targetObject.GetType()} doesnt contain field or backed property named {path}");
                         }
                         else targetField.SetValue(targetObject, option);
-
+                        EditorUtility.SetDirty(property.serializedObject.targetObject);
                         property.serializedObject.ApplyModifiedProperties();
                     });
                 }
