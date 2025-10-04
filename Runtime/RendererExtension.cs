@@ -36,24 +36,28 @@ namespace elZach.Common
 
 		public static Color GetColorFromBlock(this Renderer renderer, string propertyName)
 		{
+			if (!renderer.HasPropertyBlock()) return renderer.sharedMaterial.GetColor(propertyName);
 			renderer.GetPropertyBlock(block);
 			return block.GetColor(propertyName);
 		}
 		
 		public static float GetFloatFromBlock(this Renderer renderer, string propertyName)
 		{
+			if (!renderer.HasPropertyBlock()) return renderer.sharedMaterial.GetFloat(propertyName);
 			renderer.GetPropertyBlock(block);
 			return block.GetFloat(propertyName);
 		}
 		
 		public static Texture GetTextureFromBlock(this Renderer renderer, string propertyName)
 		{
+			if (!renderer.HasPropertyBlock()) return renderer.sharedMaterial.GetTexture(propertyName);
 			renderer.GetPropertyBlock(block);
 			return block.GetTexture(propertyName);
 		}
 		
 		public static Vector4 GetVectorFromBlock(this Renderer renderer, string propertyName)
 		{
+			if (!renderer.HasPropertyBlock()) return renderer.sharedMaterial.GetVector(propertyName);
 			renderer.GetPropertyBlock(block);
 			return block.GetVector(propertyName);
 		}
