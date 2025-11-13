@@ -223,13 +223,15 @@ namespace elZach.Common
         static object GetValue(object src, string valueName)
         {
             var type = src.GetType();
-            var field = type.GetField(valueName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            var field = type.GetField(valueName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.FlattenHierarchy);
             if (field != null)
-                return field.GetValue(src);
-            var property = type.GetProperty(valueName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                return field.GetValue(field.IsStatic ? null : src);
+            
+            var property = type.GetProperty(valueName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.FlattenHierarchy);
             if (property != null)
-                return property.GetValue(src);
-            Debug.Log($"{type.Name} has neither field nor property with name {valueName} - make sure the values access type is public");
+                return property.GetValue(property.GetMethod.IsStatic ? null : src);
+            
+            Debug.Log($"{type.Name} has neither field nor property with name {valueName}");
             return false;
         }
     }
