@@ -11,13 +11,14 @@ namespace elZach.Common
     public class EditorNoteBehaviour : MonoBehaviour
     {
         public TextAsset file;
+        [HideInInspector]public string text;
         public bool showInScene;
 
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
-            if (!showInScene || !file) return;
-            Handles.Label(transform.position, file.text);
+            if (!showInScene || (string.IsNullOrEmpty(text) && !file)) return;
+            Handles.Label(transform.position, file ? file.text : text);
         }
 #endif
     }
@@ -44,6 +45,7 @@ namespace elZach.Common
 
             if(t.file)
                 message = t.file.text;
+            else message = t.text;
 
             hadDataPreviousFrame = t.file;
         }
@@ -65,7 +67,8 @@ namespace elZach.Common
         static bool focusLastFrame;
         public override void OnInspectorGUI()
         {
-            base.OnInspectorGUI();
+            // base.OnInspectorGUI();
+            DrawDefaultInspector();
             bool focus = UnityEditorInternal.InternalEditorUtility.isApplicationActive;
             if (focus != focusLastFrame) OnFocus(focus);
             focusLastFrame = focus;
@@ -73,16 +76,24 @@ namespace elZach.Common
             if (t.file)
             {
                 if (!hadDataPreviousFrame) this.OnEnable();
-                int linesCount = message.Split('\n').Length;
-                float minHeight = Mathf.Max(50, (linesCount + 2) * lineHeight);
-                var rect = EditorGUILayout.GetControlRect(GUILayout.MinHeight(minHeight), GUILayout.ExpandHeight(true));
-                message = EditorGUI.TextArea(rect, message);
             }
-            else if(GUILayout.Button("Create New"))
+            int linesCount = message.Split('\n').Length;
+            float minHeight = Mathf.Max(50, (linesCount + 2) * lineHeight);
+            var rect = EditorGUILayout.GetControlRect(GUILayout.MinHeight(minHeight), GUILayout.ExpandHeight(true));
+            message = EditorGUI.TextArea(rect, message);
+            
+            if(!t.file)
             {
-                EditorNoteWindow window = (EditorNoteWindow)EditorWindow.GetWindow(typeof(EditorNoteWindow));
-                if (window.file) t.file = window.file;
-                window.calledBy = this;
+                t.text = message;
+
+                if (GUILayout.Button("Create New"))
+                {
+                    EditorNoteWindow window = (EditorNoteWindow)EditorWindow.GetWindow(typeof(EditorNoteWindow));
+                    if (window.file) t.file = window.file;
+                    window.calledBy = this;
+                }
+
+                serializedObject.ApplyModifiedProperties();
             }
         }
 
