@@ -109,4 +109,7 @@ namespace elZach.Common
         }
     }
 
+    [AttributeUsage(AttributeTargets.Field)]
+    public class DrawDisabledAttribute : PropertyAttribute {}
+
 }
