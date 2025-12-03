@@ -49,5 +49,6 @@ namespace elZach.Common
 
         public static float GetRandom(this Vector2 range) => UnityEngine.Random.Range(range.x, range.y);
         public static int GetRandom(this Vector2Int range) => UnityEngine.Random.Range(range.x, range.y);
+        public static bool IsInRange(this Vector2 range, float value) => value >= range.x && value <= range.y;
     }
 }
