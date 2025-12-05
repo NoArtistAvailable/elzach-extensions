@@ -112,4 +112,14 @@ namespace elZach.Common
     [AttributeUsage(AttributeTargets.Field)]
     public class DrawDisabledAttribute : PropertyAttribute {}
 
+    [AttributeUsage(AttributeTargets.Field)]
+    public class PostLabelAttribute : PropertyAttribute
+    {
+        public string Label { get; private set; }
+        public PostLabelAttribute(string label)
+        {
+            Label = label;
+        }
+    }
+
 }

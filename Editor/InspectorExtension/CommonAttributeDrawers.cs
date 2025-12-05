@@ -471,4 +471,23 @@ namespace elZach.Common
             return EditorGUI.GetPropertyHeight(property, label, true);
         }
     }
+
+    [CustomPropertyDrawer(typeof(PostLabelAttribute))]
+    public class PostLabelDrawer : PropertyDrawer
+    {
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            PostLabelAttribute postLabel = (PostLabelAttribute)attribute;
+        
+            EditorGUI.BeginProperty(position, label, property);
+        
+            Rect fieldRect = new Rect(position.x, position.y, position.width - 40, position.height);
+            EditorGUI.PropertyField(fieldRect, property, label);
+        
+            Rect labelRect = new Rect(position.x + position.width - 35, position.y, 35, position.height);
+            EditorGUI.LabelField(labelRect, postLabel.Label);
+        
+            EditorGUI.EndProperty();
+        }
+    }
 }
