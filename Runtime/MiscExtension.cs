@@ -128,10 +128,7 @@ namespace elZach.Common
 
             using (var sourceIterator = source.GetEnumerator())
             {
-                if (!sourceIterator.MoveNext())
-                {
-                    throw new InvalidOperationException("Sequence contains no elements");
-                }
+                if (!sourceIterator.MoveNext()) return default(TSource);
                 var min = sourceIterator.Current;
                 var minKey = selector(min);
                 while (sourceIterator.MoveNext())
@@ -155,10 +152,7 @@ namespace elZach.Common
 
             using (var sourceIterator = source.GetEnumerator())
             {
-                if (!sourceIterator.MoveNext())
-                {
-                    throw new InvalidOperationException("Sequence contains no elements");
-                }
+                if (!sourceIterator.MoveNext()) return default(TSource);
                 var max = sourceIterator.Current;
                 var maxKey = selector(max);
                 while (sourceIterator.MoveNext())
