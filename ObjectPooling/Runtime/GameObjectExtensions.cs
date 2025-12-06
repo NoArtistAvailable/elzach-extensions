@@ -14,12 +14,20 @@ public static class GameObjectExtensions
 
     public static void Reset(this Rigidbody rb)
     {
+#if UNITY_2023_1_OR_NEWER
         rb.linearVelocity = Vector3.zero;
+#else
+        rb.velocity = Vector3.zero;
+#endif
         rb.angularVelocity = Vector3.zero;
     }
     public static void Reset(this Rigidbody rb, Rigidbody _)
     {
+#if UNITY_2023_1_OR_NEWER
         rb.linearVelocity = Vector3.zero;
+#else
+        rb.velocity = Vector3.zero;
+#endif
         rb.angularVelocity = Vector3.zero;
     }
 
