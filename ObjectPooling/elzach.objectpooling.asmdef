@@ -1,8 +1,7 @@
 {
     "name": "elzach.objectpooling",
-    "references": [
-        "GUID:8a2eafa29b15f444eb6d74f94a930e1d"
-    ],
+    "rootNamespace": "",
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
