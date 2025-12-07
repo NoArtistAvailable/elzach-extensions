@@ -6,7 +6,7 @@
     "email": "felix.reinemann@gmail.com",
     "url": "https://github.com/NoArtistAvailable/elzach-extensions"
   },
-  "version": "0.2.1",
+  "version": "0.2.2",
   "unity": "2020.1",
   "unityRelease": "0a10",
   "description": "Package which contains common functions, neccessary for other tools.",
