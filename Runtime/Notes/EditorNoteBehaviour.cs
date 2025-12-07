@@ -77,7 +77,8 @@ namespace elZach.Common
             {
                 if (!hadDataPreviousFrame) this.OnEnable();
             }
-            int linesCount = message.Split('\n').Length;
+
+            int linesCount = message?.Split('\n').Length ?? 0;
             float minHeight = Mathf.Max(50, (linesCount + 2) * lineHeight);
             var rect = EditorGUILayout.GetControlRect(GUILayout.MinHeight(minHeight), GUILayout.ExpandHeight(true));
             message = EditorGUI.TextArea(rect, message);
