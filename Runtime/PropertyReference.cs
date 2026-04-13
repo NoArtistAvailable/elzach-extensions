@@ -110,7 +110,8 @@ namespace elZach.Common
             
             property.isExpanded = EditorGUI.Foldout (rect, property.isExpanded, "");
             rect.width -= 60;
-            EditorGUI.PropertyField(rect, property.FindPropertyRelative("m_value"), new GUIContent(property.displayName));
+            // EditorGUI.PropertyField(rect, property.FindPropertyRelative("m_value"), new GUIContent(property.displayName));
+            DrawValueField(rect, property.FindPropertyRelative("m_value"), property);
             rect.height += 3;
             if (GUI.Button(new Rect(rect.x+rect.width,rect.y,30,rect.height), "get"))
             {
@@ -138,6 +139,11 @@ namespace elZach.Common
                 EditorGUI.indentLevel--;
             }
             EditorGUI.EndProperty();
+        }
+
+        protected virtual void DrawValueField(Rect rect, SerializedProperty valueProperty, SerializedProperty parentProperty)
+        {
+            EditorGUI.PropertyField(rect, valueProperty, new GUIContent(parentProperty.displayName));
         }
     }
 #endif

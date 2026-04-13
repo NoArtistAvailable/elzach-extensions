@@ -5,6 +5,8 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEditor;
 using elZach.Access;
+using elZach.Common;
+using UnityEngine.Rendering;
 
 namespace elZach.Common
 {
@@ -216,6 +218,34 @@ namespace elZach.Common
 			base.OnGUI(position, property, label);
 			
 			// property.serializedObject.ApplyModifiedProperties();
+		}
+	}
+}
+
+[CustomPropertyDrawer(typeof(AnimatableHelpers.ColorReference))]
+public class ColorReferenceDrawer : PropertyReferenceDrawer
+{
+	protected override void DrawValueField(Rect rect, SerializedProperty valueProperty, SerializedProperty parentProperty)
+	{
+		var target = parentProperty.GetTargetObjectOfProperty() as AnimatableHelpers.ColorReference;
+		// EditorGUI.LabelField(rect, property.displayName);
+		bool hdr = false;
+		if (target?.component is Renderer r && r.sharedMaterial != null && !string.IsNullOrEmpty(target.propertyPath))
+		{
+			var shader = r.sharedMaterial.shader;
+			int idx = shader.FindPropertyIndex(target.propertyPath);
+			hdr = idx >= 0 && (shader.GetPropertyFlags(idx) & ShaderPropertyFlags.HDR) != 0;
+		}
+		
+		if (hdr)
+		{
+			EditorGUI.BeginChangeCheck();
+			var newColor = EditorGUI.ColorField(rect, new GUIContent(parentProperty.displayName), valueProperty.colorValue, true, true, true);
+			if (EditorGUI.EndChangeCheck()) valueProperty.colorValue = newColor;
+		}
+		else
+		{
+			base.DrawValueField(rect, parentProperty, valueProperty);
 		}
 	}
 }

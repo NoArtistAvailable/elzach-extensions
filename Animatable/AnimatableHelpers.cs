@@ -32,7 +32,14 @@ namespace elZach.Common
             }
             public override Color TargetSourceValue 
             {
-                get => component is Renderer renderer ? renderer.GetColorFromBlock(propertyPath) : base.TargetSourceValue;
+                // get => component is Renderer renderer ? renderer.GetColorFromBlock(propertyPath) : base.TargetSourceValue;
+                get
+                {
+                    if (component is Renderer renderer) return renderer.HasPropertyBlock() 
+                        ? renderer.GetColorFromBlock(propertyPath) 
+                        : renderer.sharedMaterial.GetColor(propertyPath);
+                    else return base.TargetSourceValue;
+                }
                 set
                 {
                     if (component is Renderer renderer) renderer.SetPropertyOnBlock(propertyPath, value);
@@ -75,9 +82,7 @@ namespace elZach.Common
             protected override string[] GetValidProperties()
             {
                 if (component is Renderer renderer)
-                    return renderer.sharedMaterial.shader.GetPropertyNames(ShaderPropertyType.Float)
-                        .Concat(renderer.sharedMaterial.shader.GetPropertyNames(ShaderPropertyType.Range))
-                        .ToArray();
+                    return renderer.sharedMaterial.shader.GetPropertyNames(ShaderPropertyType.Float).ToArray();
                 return base.GetValidProperties();
             }
             public override float TargetSourceValue 
