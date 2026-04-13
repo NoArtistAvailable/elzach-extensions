@@ -245,7 +245,7 @@ public class ColorReferenceDrawer : PropertyReferenceDrawer
 		}
 		else
 		{
-			base.DrawValueField(rect, parentProperty, valueProperty);
+			base.DrawValueField(rect, valueProperty, parentProperty);
 		}
 	}
 }
