@@ -82,12 +82,20 @@ namespace elZach.Common
             protected override string[] GetValidProperties()
             {
                 if (component is Renderer renderer)
-                    return renderer.sharedMaterial.shader.GetPropertyNames(ShaderPropertyType.Float).ToArray();
+                    return renderer.sharedMaterial.shader.GetPropertyNames(ShaderPropertyType.Float | ShaderPropertyType.Range)
+                        .ToArray();
                 return base.GetValidProperties();
             }
             public override float TargetSourceValue 
             {
-                get => component is Renderer renderer ? renderer.GetFloatFromBlock(propertyPath) : base.TargetSourceValue;
+                // get => component is Renderer renderer ? renderer.GetFloatFromBlock(propertyPath) : base.TargetSourceValue;
+                get
+                {
+                    if (component is Renderer renderer) return renderer.HasPropertyBlock() 
+                        ? renderer.GetFloatFromBlock(propertyPath) 
+                        : renderer.sharedMaterial.GetFloat(propertyPath);
+                    return base.TargetSourceValue;
+                }
                 set
                 {
                     if (component is Renderer renderer) renderer.SetPropertyOnBlock(propertyPath, value);
