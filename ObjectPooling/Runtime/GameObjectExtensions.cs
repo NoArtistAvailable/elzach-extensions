@@ -76,7 +76,8 @@ public static class GameObjectExtensions
 
     public static void Despawn<T>(this T component) where T : Component
     {
-        Pool.Despawn(component.gameObject);
+        if(component && component.gameObject)
+            Pool.Despawn(component.gameObject);
     }
 }
 //}
