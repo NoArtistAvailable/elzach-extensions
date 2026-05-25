@@ -2,7 +2,8 @@
     "name": "com.elzach.animatable.editor",
     "rootNamespace": "",
     "references": [
-        "GUID:5071919007126db4cadfbd62875d3230"
+        "GUID:5071919007126db4cadfbd62875d3230",
+        "GUID:78a63bc527d520e45b2744e4f6e054bf"
     ],
     "includePlatforms": [
         "Editor"
