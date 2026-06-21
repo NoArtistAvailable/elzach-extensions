@@ -15,10 +15,17 @@ namespace elZach.Common
         public bool showInScene;
 
 #if UNITY_EDITOR
+        private static GUIStyle labelStyle = new GUIStyle();
+
         private void OnDrawGizmos()
         {
             if (!showInScene || (string.IsNullOrEmpty(text) && !file)) return;
-            Handles.Label(transform.position, file ? file.text : text);
+            var visibility =
+                (SceneView.currentDrawingSceneView.camera.transform.position - transform.position).magnitude /
+                EditorNoteBehaviourEditor.viewDistance;
+            if (visibility > 1) return;
+            labelStyle.normal.textColor = new Color(1, 1, 1, Mathf.Clamp01(visibility.Remap(1f, 0.9f, 0f, 1f)));
+            Handles.Label(transform.position, file ? file.text : text, labelStyle);
         }
 #endif
     }
@@ -30,6 +37,33 @@ namespace elZach.Common
         string message;
         bool hadDataPreviousFrame;
         const float lineHeight = 15f;
+
+        public static float viewDistance
+        {
+            get
+            {
+                if (_viewDistance == null)
+                {
+                    if (EditorPrefs.HasKey("EditorNote/Distance"))
+                    {
+                        _viewDistance = EditorPrefs.GetFloat("EditorNote/Distance");
+                    }
+                    else
+                    {
+                        _viewDistance = 1000f;
+                        EditorPrefs.SetFloat("EditorNote/Distance", _viewDistance.Value);
+                    }
+                }
+                return _viewDistance.Value;
+            }
+            set
+            {
+                if (_viewDistance == value) return;
+                _viewDistance = value;
+                EditorPrefs.SetFloat("EditorNote/Distance", _viewDistance.Value);
+            }
+        }
+        private static float? _viewDistance = null;
 
         public void OnEnable()
         {
@@ -68,6 +102,7 @@ namespace elZach.Common
         public override void OnInspectorGUI()
         {
             // base.OnInspectorGUI();
+            viewDistance = ExpSlider("View Distance", viewDistance, 1f, 1000f);
             DrawDefaultInspector();
             bool focus = UnityEditorInternal.InternalEditorUtility.isApplicationActive;
             if (focus != focusLastFrame) OnFocus(focus);
@@ -126,6 +161,25 @@ namespace elZach.Common
                 AssetDatabase.Refresh();
                 Debug.Log("[EditorNotes] " + t.name + " saved changes to " + t.file.name + " (Note).", t.file);
             }
+        }
+        
+        public static float ExpSlider(string label, float value, float min, float max)
+        {
+            value = Mathf.Clamp(value, min, max);
+            float logMin = Mathf.Log(min);
+            float logMax = Mathf.Log(max);
+
+            Rect rect = EditorGUILayout.GetControlRect();
+            rect = EditorGUI.PrefixLabel(rect, new GUIContent(label));
+
+            Rect sliderRect = new Rect(rect.x, rect.y, rect.width - 54f, rect.height);
+            Rect fieldRect = new Rect(rect.xMax - 50f, rect.y, 50f, rect.height);
+
+            float logValue = GUI.HorizontalSlider(sliderRect, Mathf.Log(value), logMin, logMax);
+            value = Mathf.Exp(logValue);
+
+            value = Mathf.Clamp(EditorGUI.FloatField(fieldRect, value), min, max);
+            return value;
         }
     }
 
